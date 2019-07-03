@@ -1,4 +1,4 @@
-package cert_request
+package main
 
 import (
 	"fmt"
