@@ -1,4 +1,4 @@
-module github.com/Venafi/aws-lambda-venafi
+module github.com/Venafi/aws-private-ca-policy-venafi
 
 go 1.12
 
