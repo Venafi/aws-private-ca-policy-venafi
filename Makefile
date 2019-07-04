@@ -32,3 +32,7 @@ deploy_policy:
 update_policy_code:
 	aws lambda update-function-code --function-name $(CERT_POLICY_NAME) \
     --zip-file fileb://dist/$(CERT_POLICY_NAME).zip
+
+#ACM commands
+list_acm_arn:
+	aws acm-pca list-certificate-authorities|jq .CertificateAuthorities[0].Arn
