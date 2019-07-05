@@ -24,10 +24,20 @@ var (
 	ErrNameNotProvided = errors.New("no name was provided in the HTTP body")
 )
 
-type ACMPCACertificateRequest struct {
+//TODO: maybe get those types from sdk somehow
+type ACMPCAIssueCertificateRequest struct {
 	SigningAlgorithm        string `json:"SigningAlgorithm"`
 	CertificateAuthorityArn string `json:"CertificateAuthorityArn"`
 	Csr                     string `json:"Csr"`
+}
+
+type ACMPCAIssueCertificateResponse struct {
+	CertificateArn string `json:"CertificateArn"`
+}
+
+type ACMPCAGetCertificateResponse struct {
+	Certificate      string `json:"Certificate"`
+	CertificateChain string `json:"CertificateChain"`
 }
 
 // ACMPCAHandler is your Lambda function handler
@@ -38,20 +48,20 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	ctx := context.TODO()
 
 	//TODO: Parse request body with CSR
-	certRequest := new(ACMPCACertificateRequest)
+	certRequest := new(ACMPCAIssueCertificateRequest)
 	err = json.Unmarshal([]byte(request.Body), certRequest)
 	if err != nil {
 		return clientError(http.StatusUnprocessableEntity)
 	}
 
 	csr, _ := base64.StdEncoding.DecodeString(certRequest.Csr)
-	//TODO: Decode CSR
+	//Decode CSR
 	pemBlock, _ := pem.Decode([]byte(csr))
 	if pemBlock == nil {
 		return clientError(http.StatusUnprocessableEntity)
 	}
 	parsedCSR, err := x509.ParseCertificateRequest(pemBlock.Bytes)
-	if pemBlock == nil {
+	if parsedCSR == nil {
 		return clientError(http.StatusUnprocessableEntity)
 	}
 
@@ -94,17 +104,15 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 		fmt.Println(err)
 	}
 
-	certReq := acmCli.GetCertificateRequest(getReq)
+	getCertificateReq := acmCli.GetCertificateRequest(getReq)
 
-	certResp, err := certReq.Send(ctx)
+	getCertificateResp, err := getCertificateReq.Send(ctx)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			Body:       fmt.Sprintf("could not get certificate response: %s", err),
 			StatusCode: 500,
 		}, err
 	}
-
-	fmt.Println(*certResp.GetCertificateOutput.Certificate)
 
 	// stdout and stderr are sent to AWS CloudWatch Logs
 	log.Printf("Processing Lambda request %s\n", request.RequestContext.RequestID)
@@ -114,8 +122,19 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 		return events.APIGatewayProxyResponse{}, ErrNameNotProvided
 	}
 
+	fmt.Println(*getCertificateResp.GetCertificateOutput.Certificate)
+
+	respoBody := &ACMPCAGetCertificateResponse{
+		Certificate:      *getCertificateResp.GetCertificateOutput.Certificate,
+		CertificateChain: *getCertificateResp.GetCertificateOutput.CertificateChain,
+	}
+	respoBodyJSON, err := json.Marshal(respoBody)
+	if err != nil {
+		return clientError(http.StatusUnprocessableEntity)
+	}
+
 	return events.APIGatewayProxyResponse{
-		Body:       "Hello " + request.Body,
+		Body:       string(respoBodyJSON),
 		StatusCode: 200,
 	}, nil
 
