@@ -68,7 +68,7 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	acmCli := acmpca.New(awsCfg)
 	caReqInput := acmCli.IssueCertificateRequest(&acmpca.IssueCertificateInput{
 		CertificateAuthorityArn: aws.String(certRequest.CertificateAuthorityArn),
-		Csr:                     []byte(certRequest.Csr),
+		Csr:                     []byte(csr),
 		SigningAlgorithm:        acmpca.SigningAlgorithmSha256withrsa,
 		Validity: &acmpca.Validity{
 			Type:  acmpca.ValidityPeriodTypeDays,
