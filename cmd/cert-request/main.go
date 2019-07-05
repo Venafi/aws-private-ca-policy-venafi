@@ -2,19 +2,21 @@ package main
 
 import (
 	"context"
-	"crypto/x509/pkix"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
-	"github.com/Venafi/aws-private-ca-policy-venafi/common"
-	vcertificate "github.com/Venafi/vcert/pkg/certificate"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go/aws"
+	"net/http"
+
 	//"github.com/aws/aws-sdk-go/service/acm"
 	"github.com/aws/aws-sdk-go-v2/service/acmpca"
 	"log"
-	"os"
 )
 
 var (
@@ -22,54 +24,61 @@ var (
 	ErrNameNotProvided = errors.New("no name was provided in the HTTP body")
 )
 
-type AWSCertificateRequest struct {
-	CommonName string `json:"common_name"`
-	SanDNS     string `json:"san_dns"`
-	Policy     string `json:"policy"`
+//TODO: maybe get those types from sdk somehow
+type ACMPCAIssueCertificateRequest struct {
+	SigningAlgorithm        string `json:"SigningAlgorithm"`
+	CertificateAuthorityArn string `json:"CertificateAuthorityArn"`
+	Csr                     string `json:"Csr"`
 }
 
-// Handler is your Lambda function handler
+type ACMPCAIssueCertificateResponse struct {
+	CertificateArn string `json:"CertificateArn"`
+}
+
+type ACMPCAGetCertificateResponse struct {
+	Certificate      string `json:"Certificate"`
+	CertificateChain string `json:"CertificateChain"`
+}
+
+// ACMPCAHandler is your Lambda function handler
 // It uses Amazon API Gateway request/responses provided by the aws-lambda-go/events package,
 // However you could use other event sources (S3, Kinesis etc), or JSON-decoded primitive types such as 'string'.
-func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	var err error
 	ctx := context.TODO()
-	arn := os.Getenv("ACM_ARN")
 
-	//Create CSR with vcert
-	vcert, err := common.ClientVenafi()
+	//TODO: Parse request body with CSR
+	certRequest := new(ACMPCAIssueCertificateRequest)
+	err = json.Unmarshal([]byte(request.Body), certRequest)
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			Body:       fmt.Sprintf("could not create vcert client: %s", err),
-			StatusCode: 500,
-		}, err
+		return clientError(http.StatusUnprocessableEntity)
 	}
 
-	var enrollReq = &vcertificate.Request{}
-
-	enrollReq = &vcertificate.Request{
-		Subject: pkix.Name{
-			CommonName: "venafi.example.com",
-		},
+	csr, _ := base64.StdEncoding.DecodeString(certRequest.Csr)
+	//Decode CSR
+	pemBlock, _ := pem.Decode([]byte(csr))
+	if pemBlock == nil {
+		return clientError(http.StatusUnprocessableEntity)
+	}
+	parsedCSR, err := x509.ParseCertificateRequest(pemBlock.Bytes)
+	if parsedCSR == nil {
+		return clientError(http.StatusUnprocessableEntity)
 	}
 
-	err = vcert.GenerateRequest(nil, enrollReq)
-	if err != nil {
-		return events.APIGatewayProxyResponse{
-			Body:       fmt.Sprintf("could not generate certificate request: %s", err),
-			StatusCode: 500,
-		}, err
+	//TODO: Check CSR against policies
+	if parsedCSR.Subject.CommonName != "test-csr-32313131.venafi.example.com" {
+		return clientError(http.StatusUnprocessableEntity)
 	}
 
-	//Issuing ACM certificate
+	//TODO: Issuing ACM certificate
 	awsCfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
 		fmt.Println("Error loading client", err)
 	}
 	acmCli := acmpca.New(awsCfg)
 	caReqInput := acmCli.IssueCertificateRequest(&acmpca.IssueCertificateInput{
-		CertificateAuthorityArn: aws.String(arn),
-		Csr:                     enrollReq.GetCSR(),
+		CertificateAuthorityArn: aws.String(certRequest.CertificateAuthorityArn),
+		Csr:                     []byte(csr),
 		SigningAlgorithm:        acmpca.SigningAlgorithmSha256withrsa,
 		Validity: &acmpca.Validity{
 			Type:  acmpca.ValidityPeriodTypeDays,
@@ -87,7 +96,7 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	getReq := &acmpca.GetCertificateInput{
 		CertificateArn:          csrResp.CertificateArn,
-		CertificateAuthorityArn: aws.String(arn),
+		CertificateAuthorityArn: aws.String(certRequest.CertificateAuthorityArn),
 	}
 
 	err = acmCli.WaitUntilCertificateIssued(ctx, getReq)
@@ -95,17 +104,15 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		fmt.Println(err)
 	}
 
-	certReq := acmCli.GetCertificateRequest(getReq)
+	getCertificateReq := acmCli.GetCertificateRequest(getReq)
 
-	certResp, err := certReq.Send(ctx)
+	getCertificateResp, err := getCertificateReq.Send(ctx)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			Body:       fmt.Sprintf("could not get certificate response: %s", err),
 			StatusCode: 500,
 		}, err
 	}
-
-	fmt.Println(*certResp.GetCertificateOutput.Certificate)
 
 	// stdout and stderr are sent to AWS CloudWatch Logs
 	log.Printf("Processing Lambda request %s\n", request.RequestContext.RequestID)
@@ -115,13 +122,30 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		return events.APIGatewayProxyResponse{}, ErrNameNotProvided
 	}
 
+	respoBody := &ACMPCAGetCertificateResponse{
+		Certificate:      *getCertificateResp.GetCertificateOutput.Certificate,
+		CertificateChain: *getCertificateResp.GetCertificateOutput.CertificateChain,
+	}
+	respoBodyJSON, err := json.Marshal(respoBody)
+	if err != nil {
+		return clientError(http.StatusUnprocessableEntity)
+	}
+
 	return events.APIGatewayProxyResponse{
-		Body:       "Hello " + request.Body,
+		Body:       string(respoBodyJSON),
 		StatusCode: 200,
 	}, nil
 
 }
 
+//TODO: Include custom error message into body
+func clientError(status int) (events.APIGatewayProxyResponse, error) {
+	return events.APIGatewayProxyResponse{
+		StatusCode: status,
+		Body:       http.StatusText(status),
+	}, nil
+}
+
 func main() {
-	lambda.Start(Handler)
+	lambda.Start(ACMPCAHandler)
 }
