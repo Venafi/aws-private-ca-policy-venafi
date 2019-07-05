@@ -1,5 +1,7 @@
 CERT_REQUEST_NAME := cert-request
+CERT_REQUEST_VERSION := 0.0.1
 CERT_POLICY_NAME := cert-policy
+REGION := eu-west-1
 
 build_request:
 	rm -rf dist/
@@ -12,6 +14,17 @@ deploy_request:
 	aws lambda create-function --function-name $(CERT_REQUEST_NAME) --runtime go1.x \
 	--role arn:aws:iam::$(ACC_ID):role/lambda-venafi-role \
 	--handler $(CERT_REQUEST_NAME) --zip-file fileb://dist/$(CERT_REQUEST_NAME).zip
+
+cloudformation_request:
+	aws s3 mb s3://cert-request || echo "exists"
+	aws cloudformation package \
+	   --template-file templates/cert-request.yml \
+	   --output-template-file templates/serverless-deploy-cert-request.yaml \
+	   --s3-bucket cert-request
+	aws cloudformation deploy \
+	--template-file templates/serverless-deploy-cert-request.yaml \
+	--stack-name $(CERT_REQUEST_NAME)-$(CERT_REQUEST_VERSION) \
+	--capabilities CAPABILITY_IAM
 
 update_request_code:
 	aws lambda update-function-code --function-name $(CERT_REQUEST_NAME) \
