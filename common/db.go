@@ -6,16 +6,28 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"os"
 )
+
+var tableName string
+
+const primaryKey = "PolicyID"
+
+func init() {
+	tableName = os.Getenv("DYNAMODB_ZONES_TABLE")
+	if tableName == "" {
+		tableName = "cert-policy"
+	}
+}
 
 var db = dynamodb.New(session.New(), aws.NewConfig())
 
 func GetPolicy(name string) (p endpoint.Policy, err error) {
 
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String("zones"),
+		TableName: aws.String(tableName),
 		Key: map[string]*dynamodb.AttributeValue{
-			"Key": {
+			primaryKey: {
 				S: aws.String(name),
 			},
 		},
@@ -42,9 +54,10 @@ func SavePolicy(name string, p endpoint.Policy) error {
 	if err != nil {
 		return err
 	}
+	av[primaryKey] = &dynamodb.AttributeValue{S: aws.String(name)}
 	input := &dynamodb.PutItemInput{
 		Item:      av,
-		TableName: aws.String("policies"),
+		TableName: aws.String(tableName),
 	}
 
 	_, err = db.PutItem(input)
@@ -52,4 +65,17 @@ func SavePolicy(name string, p endpoint.Policy) error {
 		return err
 	}
 	return nil
+}
+
+func GetAllPoliciesNames() (names []string, err error) {
+	result, err := db.Scan(&dynamodb.ScanInput{TableName: &tableName})
+	if err != nil {
+		return
+	}
+	names = make([]string, 0, len(result.Items))
+	for _, v := range result.Items {
+		name := *v[primaryKey].S
+		names = append(names, name)
+	}
+	return
 }
