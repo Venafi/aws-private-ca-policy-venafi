@@ -1,7 +1,10 @@
 package main
 
 import (
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/assert"
@@ -48,30 +51,38 @@ xlAKgaU6i03jOm5+sww5L2YVMi1eeBN+kx7o94ogpRemC/EUidvl1PUJ6+e7an9V
 func TestACMPCAHandler(t *testing.T) {
 	json := strings.TrimSuffix(fmt.Sprintf(ACMPCAJSONRequest, os.Getenv("ACM_ARN"),
 		base64.StdEncoding.EncodeToString([]byte(csrString))), "\n")
-	tests := []struct {
-		request events.APIGatewayProxyRequest
-		expect  string
-		err     error
-	}{
-		{
-			// Test that the handler responds with the correct response
-			// when a valid name is provided in the HTTP body
-			request: events.APIGatewayProxyRequest{Body: json},
-			expect:  "Hello Paul",
-			err:     nil,
-		},
-		{
-			// Test that the handler responds ErrNameNotProvided
-			// when no name is provided in the HTTP body
-			request: events.APIGatewayProxyRequest{Body: ""},
-			expect:  "",
-			err:     fmt.Errorf("cant handle"),
-		},
+
+	certResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{Body: json})
+	if err != nil {
+		t.Errorf("Request returned error: %s", err)
 	}
 
-	for _, test := range tests {
-		response, err := ACMPCAHandler(test.request)
-		assert.IsType(t, test.err, err)
-		assert.Equal(t, test.expect, response.Body)
+	if certResp.StatusCode != 200 {
+		t.Errorf("Request returned code: %d message: %s", certResp.StatusCode, certResp.Body)
 	}
+	assert.True(t, checkCertificate(t, certResp.Body))
+
+}
+
+func checkCertificate(t *testing.T, body string) bool {
+	var err error
+	certResponse := new(ACMPCAGetCertificateResponse)
+	err = json.Unmarshal([]byte(body), certResponse)
+	if err != nil {
+		t.Errorf("Cant process response json: %s", err)
+	}
+	rawCert := certResponse.Certificate
+	pemBlock, _ := pem.Decode([]byte(rawCert))
+	if pemBlock.Bytes == nil {
+		t.Errorf("Certificate PEM is nil")
+	}
+	cert, err := x509.ParseCertificate(pemBlock.Bytes)
+	if err != nil {
+		t.Errorf("Cant parse certificate: %s", err)
+	}
+	if cert.Subject.CommonName != "test-csr-32313131.venafi.example.com" {
+		t.Log("Common name is not as expected")
+		return false
+	}
+	return true
 }

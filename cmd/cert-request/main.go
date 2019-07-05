@@ -122,8 +122,6 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 		return events.APIGatewayProxyResponse{}, ErrNameNotProvided
 	}
 
-	fmt.Println(*getCertificateResp.GetCertificateOutput.Certificate)
-
 	respoBody := &ACMPCAGetCertificateResponse{
 		Certificate:      *getCertificateResp.GetCertificateOutput.Certificate,
 		CertificateChain: *getCertificateResp.GetCertificateOutput.CertificateChain,
