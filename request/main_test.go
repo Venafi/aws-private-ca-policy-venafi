@@ -7,7 +7,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"strings"
 	"testing"
@@ -49,10 +48,10 @@ xlAKgaU6i03jOm5+sww5L2YVMi1eeBN+kx7o94ogpRemC/EUidvl1PUJ6+e7an9V
 )
 
 func TestACMPCAHandler(t *testing.T) {
-	json := strings.TrimSuffix(fmt.Sprintf(ACMPCAJSONRequest, os.Getenv("ACM_ARN"),
+	jsonBody := strings.TrimSuffix(fmt.Sprintf(ACMPCAJSONRequest, os.Getenv("ACM_ARN"),
 		base64.StdEncoding.EncodeToString([]byte(csrString))), "\n")
 
-	certResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{Body: json})
+	certResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{Body: jsonBody})
 	if err != nil {
 		t.Errorf("Request returned error: %s", err)
 	}
@@ -60,11 +59,11 @@ func TestACMPCAHandler(t *testing.T) {
 	if certResp.StatusCode != 200 {
 		t.Errorf("Request returned code: %d message: %s", certResp.StatusCode, certResp.Body)
 	}
-	assert.True(t, checkCertificate(t, certResp.Body))
+	checkCertificate(t, certResp.Body)
 
 }
 
-func checkCertificate(t *testing.T, body string) bool {
+func checkCertificate(t *testing.T, body string) {
 	var err error
 	certResponse := new(ACMPCAGetCertificateResponse)
 	err = json.Unmarshal([]byte(body), certResponse)
@@ -81,8 +80,7 @@ func checkCertificate(t *testing.T, body string) bool {
 		t.Errorf("Cant parse certificate: %s", err)
 	}
 	if cert.Subject.CommonName != "test-csr-32313131.venafi.example.com" {
-		t.Log("Common name is not as expected")
-		return false
+		t.Fatalf("Common name is not as expected")
 	}
-	return true
+	t.Logf("Certificate is ok:\n %s", certResponse.Certificate)
 }
