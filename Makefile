@@ -1,12 +1,14 @@
 CERT_REQUEST_NAME := cert-request
 CERT_REQUEST_VERSION := 0.0.1
 CERT_POLICY_NAME := cert-policy
+CERT_REQUEST_VERSION := 0.0.1
+STACK_NAME := private-ca-policy-venafi
 REGION := eu-west-1
 
 build_request:
-	rm -rf dist/
+	rm -rf dist/$(CERT_REQUEST_NAME)*
 	mkdir -p dist
-	env GOOS=linux GOARCH=amd64 go build -o dist/$(CERT_REQUEST_NAME) ./cmd/cert-request
+	env GOOS=linux GOARCH=amd64 go build -o dist/$(CERT_REQUEST_NAME) ./request
 	zip dist/$(CERT_REQUEST_NAME).zip dist/$(CERT_REQUEST_NAME)
 
 deploy_request:
@@ -31,9 +33,9 @@ update_request_code:
     --zip-file fileb://dist/$(CERT_REQUEST_NAME).zip
 
 build_policy:
-	rm -rf dist/
+	rm -rf dist/$(CERT_POLICY_NAME)*
 	mkdir -p dist
-	env GOOS=linux GOARCH=amd64 go build -o dist/$(CERT_POLICY_NAME) ./cmd/cert-policy
+	env GOOS=linux GOARCH=amd64 go build -o dist/$(CERT_POLICY_NAME) ./policy
 	zip dist/$(CERT_POLICY_NAME).zip dist/$(CERT_POLICY_NAME)
 
 deploy_policy:
@@ -49,3 +51,16 @@ update_policy_code:
 #ACM commands
 list_acm_arn:
 	aws acm-pca list-certificate-authorities|jq .CertificateAuthorities[0].Arn
+
+#SAM commands
+sam_package:
+	sam package \
+        --output-template-file packaged.yaml \
+        --s3-bucket venafi-policy-sam
+
+sam_deploy:
+	sam deploy \
+        --template-file packaged.yaml \
+        --stack-name $(STACK_NAME) \
+        --capabilities CAPABILITY_IAM \
+        --region $(REGION)
