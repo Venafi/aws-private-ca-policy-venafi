@@ -7,8 +7,8 @@ Resources:
     Properties:
       Handler: cert-request
       Runtime: go1.x
-      CodeUri: ../request/
-      Description: A simple backend with a RESTful API endpoint using Amazon API Gateway.
+      CodeUri: dist/cert-request
+      Description: Venfi request with a RESTful API endpoint using Amazon API Gateway.
       MemorySize: 512
       Timeout: 10
       #TODO: get role from parameters
@@ -16,6 +16,45 @@ Resources:
       Environment:
         Variables:
           S3_BUCKET: cert-request-lambda
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'dynamodb:GetItem'
+              Resource:
+                'Fn::Join':
+                  - ''
+                  - - 'arn:aws:dynamodb:'
+                    - Ref: 'AWS::Region'
+                    - ':'
+                    - Ref: 'AWS::AccountId'
+                    - ':table/CertPolicyTable'
+      Events:
+        ApiRequest:
+          Type: Api
+          Properties:
+            Path: /request
+            Method: POST
+        ApiGet:
+          Type: Api
+          Properties:
+            Path: /get/{certArn}
+            Method: ANY
+  CertPolicyLambda:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: cert-policy
+      Runtime: go1.x
+      CodeUri: dist/cert-policy
+      Description: Venfi policy with a RESTful API endpoint using Amazon API Gateway.
+      MemorySize: 512
+      Timeout: 10
+      #TODO: get role from parameters
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/lambda-venafi-role'
+      Environment:
+        Variables:
+          S3_BUCKET: cert-policy-lambda
       Policies:
         - Version: '2012-10-17'
           Statement:
@@ -34,15 +73,10 @@ Resources:
                     - Ref: 'AWS::AccountId'
                     - ':table/CertPolicyTable'
       Events:
-        ApiRequest:
-          Type: Api
-          Properties:
-            Path: /request
-            Method: POST
         ApiGet:
           Type: Api
           Properties:
-            Path: /get/{certId}
+            Path: /{policyId}
             Method: ANY
   CertPolicyTable:
     Type: 'AWS::DynamoDB::Table'
