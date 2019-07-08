@@ -9,24 +9,32 @@ import (
 	"github.com/Venafi/vcert/pkg/endpoint"
 	"github.com/aws/aws-lambda-go/lambda"
 	"log"
-	"net/http"
 	"os"
 )
 
 var vcertConnector endpoint.Connector
 
-func HandleRequest(ctx context.Context) (string, error) {
-	http.Get("https://subbot.in/")
-	vcertConnector.SetZone("Default")
-	p, err := vcertConnector.ReadPolicyConfiguration()
+func HandleRequest(ctx context.Context) error {
+	names, err := common.GetAllPoliciesNames()
 	if err != nil {
 		fmt.Println(err)
+		return err
 	}
-	s := ""
-	s += fmt.Sprintf("%+v", p)
-	s += fmt.Sprintln(common.SavePolicy("Default", *p))
-	s += fmt.Sprintln(common.GetPolicy("Default"))
-	return "Hello World!" + s, nil
+	fmt.Println("get names", names)
+	for _, name := range names {
+		vcertConnector.SetZone(name)
+		p, err := vcertConnector.ReadPolicyConfiguration()
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+		err = common.SavePolicy("Default", *p)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+	}
+	return nil
 }
 
 func main() {
@@ -43,6 +51,7 @@ func getConnection() (endpoint.Connector, error) {
 	tppUrl := os.Getenv("VCERT_TPP_URL")
 	tppUser := os.Getenv("VCERT_TPP_USER")
 	tppPassword := os.Getenv("VCERT_TPP_PASSWORD")
+	cloudUrl := os.Getenv("VCERT_CLOUD_URL")
 	cloudKey := os.Getenv("VCERT_CLOUD_APIKEY")
 	trustBundle := os.Getenv("TRUST_BUNDLE")
 
@@ -66,6 +75,7 @@ func getConnection() (endpoint.Connector, error) {
 		config = vcert.Config{
 			ConnectorType: endpoint.ConnectorTypeCloud,
 			Credentials:   &endpoint.Authentication{APIKey: cloudKey},
+			BaseUrl:       cloudUrl,
 		}
 	} else {
 		panic("bad credentials for connection") //todo: replace with something more beatifull
