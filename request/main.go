@@ -14,7 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"net/http"
 
-	//"github.com/aws/aws-sdk-go/service/acm"
+	"github.com/Venafi/aws-private-ca-policy-venafi/common"
 	"github.com/aws/aws-sdk-go-v2/service/acmpca"
 	"log"
 )
@@ -29,6 +29,7 @@ type ACMPCAIssueCertificateRequest struct {
 	SigningAlgorithm        string `json:"SigningAlgorithm"`
 	CertificateAuthorityArn string `json:"CertificateAuthorityArn"`
 	Csr                     string `json:"Csr"`
+	Policy                  string `json:"Policy"`
 }
 
 type ACMPCAIssueCertificateResponse struct {
@@ -64,6 +65,14 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	if parsedCSR == nil {
 		return clientError(http.StatusUnprocessableEntity)
 	}
+
+	//TODO: Get policies from DB
+	if len(certRequest.Policy) == 0 {
+		certRequest.Policy = "Default"
+	}
+
+	policy, err := common.GetPolicy(certRequest.Policy)
+	log.Println(policy)
 
 	//TODO: Check CSR against policies
 	if parsedCSR.Subject.CommonName != "test-csr-32313131.venafi.example.com" {
