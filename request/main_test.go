@@ -1,7 +1,10 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
@@ -49,7 +52,7 @@ xlAKgaU6i03jOm5+sww5L2YVMi1eeBN+kx7o94ogpRemC/EUidvl1PUJ6+e7an9V
 
 func TestACMPCAHandler(t *testing.T) {
 	jsonBody := strings.TrimSuffix(fmt.Sprintf(ACMPCAJSONRequest, os.Getenv("ACM_ARN"),
-		base64.StdEncoding.EncodeToString([]byte(csrString))), "\n")
+		base64.StdEncoding.EncodeToString(createCSR())), "\n")
 
 	certResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{Body: jsonBody})
 	if err != nil {
@@ -83,4 +86,19 @@ func checkCertificate(t *testing.T, body string) {
 		t.Fatalf("Common name is not as expected")
 	}
 	t.Logf("Certificate is ok:\n %s", certResponse.Certificate)
+}
+
+func createCSR() []byte {
+
+	csr := x509.CertificateRequest{
+		Subject: pkix.Name{
+			Country:      []string{"Earth"},
+			Organization: []string{"Mother Nature"},
+			CommonName:   "example.venafi.com",
+		},
+		EmailAddresses: []string{"some@adress"},
+	}
+	keyBytes, _ := rsa.GenerateKey(rand.Reader, 1024)
+	csrBytes, _ := x509.CreateCertificateRequest(rand.Reader, &csr, keyBytes)
+	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csrBytes})
 }
