@@ -52,18 +52,18 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	certRequest := new(ACMPCAIssueCertificateRequest)
 	err = json.Unmarshal([]byte(request.Body), certRequest)
 	if err != nil {
-		return clientError(http.StatusUnprocessableEntity)
+		return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Error unmarshaling JSON: %s", err))
 	}
 
 	csr, _ := base64.StdEncoding.DecodeString(certRequest.Csr)
 	//Decode CSR
 	pemBlock, _ := pem.Decode([]byte(csr))
 	if pemBlock == nil {
-		return clientError(http.StatusUnprocessableEntity)
+		return clientError(http.StatusUnprocessableEntity, "PEM block in CSR is nil")
 	}
 	parsedCSR, err := x509.ParseCertificateRequest(pemBlock.Bytes)
 	if parsedCSR == nil {
-		return clientError(http.StatusUnprocessableEntity)
+		return clientError(http.StatusUnprocessableEntity, "Can't parse certificate request")
 	}
 
 	//TODO: Get policies from DB
@@ -72,11 +72,16 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	}
 
 	policy, err := common.GetPolicy(certRequest.Policy)
+	if err != nil {
+		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed get policy from database: %s", err))
+	}
+
 	log.Println(policy)
 
 	//TODO: Check CSR against policies
-	if parsedCSR.Subject.CommonName != "test-csr-32313131.venafi.example.com" {
-		return clientError(http.StatusUnprocessableEntity)
+	certCN := parsedCSR.Subject.CommonName
+	if certCN != "test-csr-32313131.venafi.example.com" {
+		return clientError(http.StatusForbidden, fmt.Sprintf("common name %s is not allowed in this policy", certCN))
 	}
 
 	//TODO: Issuing ACM certificate
@@ -97,10 +102,7 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 
 	csrResp, err := caReqInput.Send(ctx)
 	if err != nil {
-		return events.APIGatewayProxyResponse{
-			Body:       fmt.Sprintf("could not get certificate response: %s", err),
-			StatusCode: 500,
-		}, err
+		return clientError(500, fmt.Sprintf("could not get certificate response: %s", err))
 	}
 
 	getReq := &acmpca.GetCertificateInput{
@@ -137,7 +139,7 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	}
 	respoBodyJSON, err := json.Marshal(respoBody)
 	if err != nil {
-		return clientError(http.StatusUnprocessableEntity)
+		return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Error marshaling response JSON: %s", err))
 	}
 
 	return events.APIGatewayProxyResponse{
@@ -148,10 +150,10 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 }
 
 //TODO: Include custom error message into body
-func clientError(status int) (events.APIGatewayProxyResponse, error) {
+func clientError(status int, body string) (events.APIGatewayProxyResponse, error) {
 	return events.APIGatewayProxyResponse{
 		StatusCode: status,
-		Body:       http.StatusText(status),
+		Body:       fmt.Sprintf(`{ "msg" : "%s" }`, body),
 	}, nil
 }
 

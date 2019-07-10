@@ -53,11 +53,11 @@ func TestACMPCAHandler(t *testing.T) {
 
 	certResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{Body: jsonBody})
 	if err != nil {
-		t.Errorf("Request returned error: %s", err)
+		t.Fatalf("Request returned error: %s", err)
 	}
 
 	if certResp.StatusCode != 200 {
-		t.Errorf("Request returned code: %d message: %s", certResp.StatusCode, certResp.Body)
+		t.Fatalf("Request returned code: %d message: %s", certResp.StatusCode, certResp.Body)
 	}
 	checkCertificate(t, certResp.Body)
 
@@ -68,16 +68,16 @@ func checkCertificate(t *testing.T, body string) {
 	certResponse := new(ACMPCAGetCertificateResponse)
 	err = json.Unmarshal([]byte(body), certResponse)
 	if err != nil {
-		t.Errorf("Cant process response json: %s", err)
+		t.Fatalf("Cant process response json: %s", err)
 	}
 	rawCert := certResponse.Certificate
 	pemBlock, _ := pem.Decode([]byte(rawCert))
 	if pemBlock.Bytes == nil {
-		t.Errorf("Certificate PEM is nil")
+		t.Fatalf("Certificate PEM is nil")
 	}
 	cert, err := x509.ParseCertificate(pemBlock.Bytes)
 	if err != nil {
-		t.Errorf("Cant parse certificate: %s", err)
+		t.Fatalf("Cant parse certificate: %s", err)
 	}
 	if cert.Subject.CommonName != "test-csr-32313131.venafi.example.com" {
 		t.Fatalf("Common name is not as expected")
