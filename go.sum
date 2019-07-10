@@ -1,3 +1,5 @@
+github.com/Venafi/vcert v0.0.0-20190710142916-c27071681c95 h1:WZfVCU+AMQMZDOJK057tqAbMcXD1vNyTDczbrJ5qU0k=
+github.com/Venafi/vcert v0.0.0-20190710142916-c27071681c95/go.mod h1:3sXw16DKVded/kLVDma2veqEUQC7O37h98ims7cIvN4=
 github.com/Venafi/vcert v4.1.0+incompatible h1:rvYqefvYqvHDhui1oK6zP53ShNuWzns0huGZ9ZgnkpI=
 github.com/Venafi/vcert v4.1.0+incompatible/go.mod h1:3sXw16DKVded/kLVDma2veqEUQC7O37h98ims7cIvN4=
 github.com/aws/aws-lambda-go v1.11.1 h1:wuOnhS5aqzPOWns71FO35PtbtBKHr4MYsPVt5qXLSfI=

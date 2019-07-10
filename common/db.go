@@ -79,3 +79,20 @@ func GetAllPoliciesNames() (names []string, err error) {
 	}
 	return
 }
+
+func DeletePolicy(name string) error {
+	input := &dynamodb.DeleteItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			primaryKey: {
+				S: aws.String(name),
+			},
+		},
+	}
+
+	_, err := db.DeleteItem(input)
+	if err != nil {
+		return err
+	}
+	return nil
+}

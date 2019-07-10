@@ -20,15 +20,20 @@ func HandleRequest(ctx context.Context) error {
 		fmt.Println(err)
 		return err
 	}
-	fmt.Println("get names", names)
 	for _, name := range names {
 		vcertConnector.SetZone(name)
 		p, err := vcertConnector.ReadPolicyConfiguration()
-		if err != nil {
+		if err == endpoint.VenafiErrorZoneNotFound {
+			err = common.DeletePolicy(name)
+			if err != nil {
+				return err
+			}
+			continue
+		} else if err != nil {
 			fmt.Println(err)
 			return err
 		}
-		err = common.SavePolicy("Default", *p)
+		err = common.SavePolicy(name, *p)
 		if err != nil {
 			fmt.Println(err)
 			return err
