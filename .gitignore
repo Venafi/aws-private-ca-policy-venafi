@@ -2,4 +2,5 @@
 credentials
 dist
 example-sam-app
+event.json
 !*/**

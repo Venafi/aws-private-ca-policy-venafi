@@ -1,15 +1,19 @@
 CERT_REQUEST_NAME := cert-request
+CERT_REQUEST_LAMBDA_NAME := CertRequestLambda
 CERT_REQUEST_VERSION := 0.0.1
+
 CERT_POLICY_NAME := cert-policy
-CERT_REQUEST_VERSION := 0.0.1
+CERT_POLICY_LAMBDA_NAME := CertPolicyLambda
+CERT_POLICY_VERSION := 0.0.1
+
 STACK_NAME := private-ca-policy-venafi
 REGION := eu-west-1
 
 build_request:
-	rm -rf dist/$(CERT_REQUEST_NAME)*
-	mkdir -p dist
-	env GOOS=linux GOARCH=amd64 go build -o dist/$(CERT_REQUEST_NAME) ./request
-	zip dist/$(CERT_REQUEST_NAME).zip dist/$(CERT_REQUEST_NAME)
+	rm -rf dist/$(CERT_REQUEST_NAME)
+	mkdir -p dist/$(CERT_REQUEST_NAME)
+	env GOOS=linux GOARCH=amd64 go build -o dist/$(CERT_REQUEST_NAME)/$(CERT_REQUEST_NAME) ./request
+	zip dist/$(CERT_REQUEST_NAME)/$(CERT_REQUEST_NAME).zip dist/$(CERT_REQUEST_NAME)/$(CERT_REQUEST_NAME)
 
 deploy_request:
 	aws lambda delete-function --function-name $(CERT_REQUEST_NAME) || echo "Function doesn't exists"
@@ -33,10 +37,10 @@ update_request_code:
     --zip-file fileb://dist/$(CERT_REQUEST_NAME).zip
 
 build_policy:
-	rm -rf dist/$(CERT_POLICY_NAME)*
-	mkdir -p dist
-	env GOOS=linux GOARCH=amd64 go build -o dist/$(CERT_POLICY_NAME) ./policy
-	zip dist/$(CERT_POLICY_NAME).zip dist/$(CERT_POLICY_NAME)
+	rm -rf dist/$(CERT_POLICY_NAME)
+	mkdir -p dist/$(CERT_POLICY_NAME)
+	env GOOS=linux GOARCH=amd64 go build -o dist/$(CERT_POLICY_NAME)/$(CERT_POLICY_NAME) ./policy
+	zip dist/$(CERT_POLICY_NAME)/$(CERT_POLICY_NAME).zip dist/$(CERT_POLICY_NAME)/$(CERT_POLICY_NAME)
 
 deploy_policy:
 	aws lambda delete-function --function-name $(CERT_POLICY_NAME) || echo "Function doesn't exists"
@@ -64,3 +68,18 @@ sam_deploy:
         --stack-name $(STACK_NAME) \
         --capabilities CAPABILITY_IAM \
         --region $(REGION)
+
+sam_delete:
+	aws cloudformation delete-stack --stack-name $(STACK_NAME)
+
+get_proxy:
+	aws cloudformation --region $(REGION) describe-stacks --stack-name $(STACK_NAME) --query "Stacks[0].Outputs[0].OutputValue"
+
+get_logs:
+	sam logs -n $(CERT_REQUEST_LAMBDA_NAME) --stack-name $(STACK_NAME)
+
+sam_invoke_request:
+	sam local invoke "$(CERT_REQUEST_LAMBDA_NAME)" -e event.json
+
+sam_invoke_policy:
+	sam local invoke "CERT_POLICY_LAMBDA_NAME" -e event.json
