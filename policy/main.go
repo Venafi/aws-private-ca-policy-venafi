@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"github.com/Venafi/aws-private-ca-policy-venafi/common"
@@ -14,7 +13,7 @@ import (
 
 var vcertConnector endpoint.Connector
 
-func HandleRequest(ctx context.Context) error {
+func HandleRequest() error {
 	names, err := common.GetAllPoliciesNames()
 	if err != nil {
 		fmt.Println(err)
@@ -44,7 +43,14 @@ func HandleRequest(ctx context.Context) error {
 
 func main() {
 	var err error
-	vcertConnector, err = getConnection()
+	vcertConnector, err = getConnection(
+		os.Getenv("VCERT_TPP_URL"),
+		os.Getenv("VCERT_TPP_USER"),
+		os.Getenv("VCERT_TPP_PASSWORD"),
+		os.Getenv("VCERT_CLOUD_URL"),
+		os.Getenv("VCERT_CLOUD_APIKEY"),
+		os.Getenv("TRUST_BUNDLE"),
+	)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -52,14 +58,7 @@ func main() {
 	lambda.Start(HandleRequest)
 }
 
-func getConnection() (endpoint.Connector, error) {
-	tppUrl := os.Getenv("VCERT_TPP_URL")
-	tppUser := os.Getenv("VCERT_TPP_USER")
-	tppPassword := os.Getenv("VCERT_TPP_PASSWORD")
-	cloudUrl := os.Getenv("VCERT_CLOUD_URL")
-	cloudKey := os.Getenv("VCERT_CLOUD_APIKEY")
-	trustBundle := os.Getenv("TRUST_BUNDLE")
-
+func getConnection(tppUrl, tppUser, tppPassword, cloudUrl, cloudKey, trustBundle string) (endpoint.Connector, error) {
 	var config vcert.Config
 	if tppUrl != "" && tppUser != "" && tppPassword != "" {
 		config = vcert.Config{
@@ -69,12 +68,12 @@ func getConnection() (endpoint.Connector, error) {
 		}
 		if trustBundle != "" {
 			var buf []byte
-			trustBundle, err := base64.StdEncoding.Decode(buf, []byte(trustBundle))
+			_, err := base64.StdEncoding.Decode(buf, []byte(trustBundle))
 			if err != nil {
 				log.Printf("Can`t read trust bundle from file %s: %v\n", trustBundle, err)
 				return nil, err
 			}
-			config.ConnectionTrust = string(trustBundle)
+			config.ConnectionTrust = string(buf)
 		}
 	} else if cloudKey != "" {
 		config = vcert.Config{
