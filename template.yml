@@ -2,6 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Venafi policy integration for AWS Private CA.
 Resources:
+  #TODO: add ACM PCA configuration ( or maybe do it in separated template
   CertRequestLambda:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -12,6 +13,8 @@ Resources:
       MemorySize: 512
       Timeout: 10
       #TODO: get role from parameters
+      #TODO: attach AWSCertificateManagerPrivateCAUser role to lambda
+      #TODO: provide json for creating a role
       Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/lambda-venafi-role'
       Environment:
         Variables:

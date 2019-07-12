@@ -3,4 +3,5 @@ credentials
 dist
 example-sam-app
 event.json
+resource-policy.json
 !*/**
