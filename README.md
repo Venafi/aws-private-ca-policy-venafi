@@ -1,2 +1,2 @@
-##!!!This is work in progress
+#This is work in progress
 AWS Lambda Venafi integration
