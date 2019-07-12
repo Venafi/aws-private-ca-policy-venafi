@@ -3,12 +3,13 @@ package main
 import (
 	"github.com/Venafi/aws-private-ca-policy-venafi/common"
 	"github.com/Venafi/vcert/pkg/endpoint"
+	"os"
 	"testing"
 )
 
 func TestHandleRequestCloud(t *testing.T) {
 	var err error
-	vcertConnector, err = getConnection("", "", "", "https://api.dev12.venafi.io", " 20257a71-6be6-4c5f-b0fe-3b7ce98c08d9", "")
+	vcertConnector, err = getConnection("", "", "", os.Getenv("CLOUDURL"), os.Getenv("CLOUDAPIKEY"), "")
 	zoneName := "Default"
 	unexistedZone := "Unexisted zone olololololo"
 	if err != nil {

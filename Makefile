@@ -90,3 +90,8 @@ sam_invoke_request:
 
 sam_invoke_policy:
 	sam local invoke "CERT_POLICY_LAMBDA_NAME" -e event.json
+
+tests:
+	go test -v -cover common/*
+	go test -v -cover policy/*
+	go test -v -cover request/*

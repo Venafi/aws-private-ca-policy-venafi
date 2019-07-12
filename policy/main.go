@@ -44,11 +44,11 @@ func HandleRequest() error {
 func main() {
 	var err error
 	vcertConnector, err = getConnection(
-		os.Getenv("VCERT_TPP_URL"),
-		os.Getenv("VCERT_TPP_USER"),
-		os.Getenv("VCERT_TPP_PASSWORD"),
-		os.Getenv("VCERT_CLOUD_URL"),
-		os.Getenv("VCERT_CLOUD_APIKEY"),
+		os.Getenv("TPPURL"),
+		os.Getenv("TPPUSER"),
+		os.Getenv("TPPPASSWORD"),
+		os.Getenv("CLOUDURL"),
+		os.Getenv("CLOUDAPIKEY"),
 		os.Getenv("TRUST_BUNDLE"),
 	)
 	if err != nil {

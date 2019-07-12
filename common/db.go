@@ -1,11 +1,13 @@
 package common
 
 import (
+	"context"
+	"errors"
 	"github.com/Venafi/vcert/pkg/endpoint"
+	"github.com/aws/aws-sdk-go-v2/aws/external"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"os"
 )
 
@@ -18,26 +20,32 @@ func init() {
 	if tableName == "" {
 		tableName = "cert-policy"
 	}
+	cfg, err := external.LoadDefaultAWSConfig()
+	if err != nil {
+		panic("unable to load SDK config, " + err.Error())
+	}
+	db = dynamodb.New(cfg)
 }
 
-var db = dynamodb.New(session.New(), aws.NewConfig())
+var db *dynamodb.Client
 
 func GetPolicy(name string) (p endpoint.Policy, err error) {
 
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String(tableName),
-		Key: map[string]*dynamodb.AttributeValue{
+		Key: map[string]dynamodb.AttributeValue{
 			primaryKey: {
 				S: aws.String(name),
 			},
 		},
 	}
 
-	result, err := db.GetItem(input)
+	result, err := db.GetItemRequest(input).Send(context.Background())
 	if err != nil {
 		return
 	}
 	if result.Item == nil {
+		err = errors.New("not found")
 		return
 	}
 
@@ -54,13 +62,13 @@ func SavePolicy(name string, p endpoint.Policy) error {
 	if err != nil {
 		return err
 	}
-	av[primaryKey] = &dynamodb.AttributeValue{S: aws.String(name)}
+	av[primaryKey] = dynamodb.AttributeValue{S: aws.String(name)}
 	input := &dynamodb.PutItemInput{
 		Item:      av,
 		TableName: aws.String(tableName),
 	}
 
-	_, err = db.PutItem(input)
+	_, err = db.PutItemRequest(input).Send(context.Background())
 	if err != nil {
 		return err
 	}
@@ -68,7 +76,8 @@ func SavePolicy(name string, p endpoint.Policy) error {
 }
 
 func GetAllPoliciesNames() (names []string, err error) {
-	result, err := db.Scan(&dynamodb.ScanInput{TableName: &tableName})
+	var t = db
+	result, err := t.ScanRequest(&dynamodb.ScanInput{TableName: &tableName}).Send(context.Background())
 	if err != nil {
 		return
 	}
@@ -83,14 +92,14 @@ func GetAllPoliciesNames() (names []string, err error) {
 func DeletePolicy(name string) error {
 	input := &dynamodb.DeleteItemInput{
 		TableName: aws.String(tableName),
-		Key: map[string]*dynamodb.AttributeValue{
+		Key: map[string]dynamodb.AttributeValue{
 			primaryKey: {
 				S: aws.String(name),
 			},
 		},
 	}
 
-	_, err := db.DeleteItem(input)
+	_, err := db.DeleteItemRequest(input).Send(context.Background())
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ import (
 	"github.com/Venafi/vcert/pkg/endpoint"
 	"math/rand"
 	"testing"
+	"time"
 )
 
 var testPolicy = endpoint.Policy{
@@ -25,6 +26,10 @@ var testPolicy = endpoint.Policy{
 	true,
 }
 
+func randSeq() string {
+	rand.Seed(time.Now().UnixNano())
+	return fmt.Sprintf("%d", rand.Int63())
+}
 func TestGetAllPoliciesNames(t *testing.T) {
 	names, err := GetAllPoliciesNames()
 	if err != nil {
@@ -32,7 +37,7 @@ func TestGetAllPoliciesNames(t *testing.T) {
 	}
 	lenNames := len(names)
 
-	policyName := fmt.Sprintf("policy%dtest", rand.Int63())
+	policyName := fmt.Sprintf("policy%stest", randSeq())
 	if strInSlice(policyName, names) {
 		t.Fatal("policy already exists")
 	}
@@ -51,7 +56,7 @@ func TestGetAllPoliciesNames(t *testing.T) {
 }
 
 func TestDeletePolicy(t *testing.T) {
-	policyName := fmt.Sprintf("policy%dtest", rand.Int63())
+	policyName := fmt.Sprintf("policy%stest", randSeq())
 	err := SavePolicy(policyName, testPolicy)
 	if err != nil {
 		t.Fatal(err)
@@ -79,5 +84,5 @@ func strInSlice(s string, sl []string) bool {
 			return true
 		}
 	}
-	return true
+	return false
 }
