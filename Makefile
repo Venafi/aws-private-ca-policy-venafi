@@ -15,7 +15,7 @@ TEST_TIMEOUT?=6m
 
 test:
 #	go test $(TEST) $(TESTARGS) -v -timeout=$(TEST_TIMEOUT) -parallel=20
-	go test request $(TESTARGS) -v -timeout=$(TEST_TIMEOUT) -parallel=20
+	go test github.com/Venafi/aws-private-ca-policy-venafi/request $(TESTARGS) -v -timeout=$(TEST_TIMEOUT) -parallel=20
 
 build: test build_request build_policy sam_package
 
