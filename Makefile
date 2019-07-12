@@ -28,9 +28,9 @@ build_request:
 	rm -rf dist/$(CERT_REQUEST_NAME)
 	mkdir -p dist/$(CERT_REQUEST_NAME)
 	env GOOS=linux GOARCH=amd64 go build -o dist/$(CERT_REQUEST_NAME)/$(CERT_REQUEST_NAME) ./request
-	zip dist/$(CERT_REQUEST_NAME)/$(CERT_REQUEST_NAME).zip dist/$(CERT_REQUEST_NAME)/$(CERT_REQUEST_NAME)
 
 deploy_request:
+	zip dist/$(CERT_REQUEST_NAME)/$(CERT_REQUEST_NAME).zip dist/$(CERT_REQUEST_NAME)/$(CERT_REQUEST_NAME)
 	aws lambda delete-function --function-name $(CERT_REQUEST_NAME) || echo "Function doesn't exists"
 	aws lambda create-function --function-name $(CERT_REQUEST_NAME) --runtime go1.x \
 	--role arn:aws:iam::$(ACC_ID):role/lambda-venafi-role \
@@ -55,9 +55,9 @@ build_policy:
 	rm -rf dist/$(CERT_POLICY_NAME)
 	mkdir -p dist/$(CERT_POLICY_NAME)
 	env GOOS=linux GOARCH=amd64 go build -o dist/$(CERT_POLICY_NAME)/$(CERT_POLICY_NAME) ./policy
-	zip dist/$(CERT_POLICY_NAME)/$(CERT_POLICY_NAME).zip dist/$(CERT_POLICY_NAME)/$(CERT_POLICY_NAME)
 
 deploy_policy:
+	zip dist/$(CERT_POLICY_NAME)/$(CERT_POLICY_NAME).zip dist/$(CERT_POLICY_NAME)/$(CERT_POLICY_NAME)
 	aws lambda delete-function --function-name $(CERT_POLICY_NAME) || echo "Function doesn't exists"
 	aws lambda create-function --function-name $(CERT_POLICY_NAME) --runtime go1.x \
 	--role arn:aws:iam::$(ACC_ID):role/lambda-venafi-role \
