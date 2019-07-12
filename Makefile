@@ -16,6 +16,13 @@ TEST_TIMEOUT?=6m
 test:
 	go test $(TEST) $(TESTARGS) -v -timeout=$(TEST_TIMEOUT) -parallel=20
 
+build: test build_request build_policy sam_package
+
+sam_test:
+	for e in `ls fixtures/*-event.json`; do sam local invoke CertRequestLambda -e $$e; done
+
+deploy: sam_deploy
+
 build_request:
 	rm -rf dist/$(CERT_REQUEST_NAME)
 	mkdir -p dist/$(CERT_REQUEST_NAME)
@@ -74,7 +81,7 @@ sam_deploy:
         --template-file packaged.yaml \
         --stack-name $(STACK_NAME) \
         --capabilities CAPABILITY_IAM \
-        --region $(REGION)
+        --region $(REGION) || echo "Looks like no changes in stack"
 
 sam_delete:
 	aws cloudformation delete-stack --stack-name $(STACK_NAME)
