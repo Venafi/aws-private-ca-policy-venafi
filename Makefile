@@ -9,6 +9,13 @@ CERT_POLICY_VERSION := 0.0.1
 STACK_NAME := private-ca-policy-venafi
 REGION := eu-west-1
 
+# List of tests to run
+TEST ?= $$(go list ./... | grep -v /vendor/ | grep -v /e2e)
+TEST_TIMEOUT?=6m
+
+test:
+	go test $(TEST) $(TESTARGS) -v -timeout=$(TEST_TIMEOUT) -parallel=20
+
 build_request:
 	rm -rf dist/$(CERT_REQUEST_NAME)
 	mkdir -p dist/$(CERT_REQUEST_NAME)
