@@ -10,16 +10,12 @@
 
 1. Run `make sam_deploy` to deploy stack to AWS
 
-1. Edit resource-policy-example.json
+1. Copy resource-policy-example.json to resource-policy.json and edit it
 
-1. Apply policy to API endpoint
+1. Apply policy to API endpoint (you can api-id by running command `aws apigateway get-rest-apis`)
     ```bash
-    
+    aws apigateway update-rest-api \
+        --rest-api-id api-id \
+        --patch-operations \
+        op=replace,path=/policy,value=$(jq -c -a @text resource-policy-example.json)
     ``` 
-
-1. Get your ACM ARN:
-    ```
-    aws acm-pca list-certificate-authorities|jq .CertificateAuthorities[0].Arn
-    ```
-
-1.  
