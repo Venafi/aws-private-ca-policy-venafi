@@ -1,7 +1,7 @@
 #This is work in progress
 
 ##AWS Lambda Venafi integration
-
+![Self-editing Diagram](Diagram.svg)
 ###AWS Configuration steps (for developers:
 
 1. Run `make build` to make binaries
@@ -17,5 +17,5 @@
     aws apigateway update-rest-api \
         --rest-api-id api-id \
         --patch-operations \
-        op=replace,path=/policy,value=$(jq -c -a @text resource-policy-example.json)
+        op=replace,path=/policy,value=$(jq -c -a @text resource-policy.json)
     ``` 
