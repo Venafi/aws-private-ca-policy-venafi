@@ -1,8 +1,10 @@
-#This is work in progress
+# This is work in progress
 
-##AWS Lambda Venafi integration
+## AWS Lambda Venafi integration
+
 ![Self-editing Diagram](Diagram.svg)
-###AWS Configuration steps (for developers:
+
+### AWS Configuration steps (for developers:
 
 1. Run `make build` to make binaries
 
