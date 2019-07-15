@@ -14,15 +14,23 @@ TEST ?= $$(go list ./... | grep -v /vendor/ | grep -v /e2e)
 TEST_TIMEOUT?=6m
 
 test:
-	go test $(TEST) $(TESTARGS) -v -timeout=$(TEST_TIMEOUT) -parallel=20
+#	go test $(TEST) $(TESTARGS) -v -timeout=$(TEST_TIMEOUT) -parallel=20
+	go test github.com/Venafi/aws-private-ca-policy-venafi/request $(TESTARGS) -v -timeout=$(TEST_TIMEOUT) -parallel=20
+
+build: test build_request build_policy sam_package
+
+sam_test:
+	for e in `ls fixtures/*-event.json`; do sam local invoke CertRequestLambda -e $$e; done
+
+deploy: sam_deploy
 
 build_request:
 	rm -rf dist/$(CERT_REQUEST_NAME)
 	mkdir -p dist/$(CERT_REQUEST_NAME)
 	env GOOS=linux GOARCH=amd64 go build -o dist/$(CERT_REQUEST_NAME)/$(CERT_REQUEST_NAME) ./request
-	zip dist/$(CERT_REQUEST_NAME)/$(CERT_REQUEST_NAME).zip dist/$(CERT_REQUEST_NAME)/$(CERT_REQUEST_NAME)
 
 deploy_request:
+	zip dist/$(CERT_REQUEST_NAME)/$(CERT_REQUEST_NAME).zip dist/$(CERT_REQUEST_NAME)/$(CERT_REQUEST_NAME)
 	aws lambda delete-function --function-name $(CERT_REQUEST_NAME) || echo "Function doesn't exists"
 	aws lambda create-function --function-name $(CERT_REQUEST_NAME) --runtime go1.x \
 	--role arn:aws:iam::$(ACC_ID):role/lambda-venafi-role \
@@ -47,9 +55,9 @@ build_policy:
 	rm -rf dist/$(CERT_POLICY_NAME)
 	mkdir -p dist/$(CERT_POLICY_NAME)
 	env GOOS=linux GOARCH=amd64 go build -o dist/$(CERT_POLICY_NAME)/$(CERT_POLICY_NAME) ./policy
-	zip dist/$(CERT_POLICY_NAME)/$(CERT_POLICY_NAME).zip dist/$(CERT_POLICY_NAME)/$(CERT_POLICY_NAME)
 
 deploy_policy:
+	zip dist/$(CERT_POLICY_NAME)/$(CERT_POLICY_NAME).zip dist/$(CERT_POLICY_NAME)/$(CERT_POLICY_NAME)
 	aws lambda delete-function --function-name $(CERT_POLICY_NAME) || echo "Function doesn't exists"
 	aws lambda create-function --function-name $(CERT_POLICY_NAME) --runtime go1.x \
 	--role arn:aws:iam::$(ACC_ID):role/lambda-venafi-role \
@@ -74,7 +82,7 @@ sam_deploy:
         --template-file packaged.yaml \
         --stack-name $(STACK_NAME) \
         --capabilities CAPABILITY_IAM \
-        --region $(REGION)
+        --region $(REGION) || echo "Looks like no changes in stack"
 
 sam_delete:
 	aws cloudformation delete-stack --stack-name $(STACK_NAME)
