@@ -2,8 +2,16 @@
 
 ## AWS Lambda Venafi integration
 
+#### How it works diagram
+
 ![Self-editing Diagram](Diagram.svg)
 
+#### IAM user roles
+
+1. Lambda role should have following policies assigned:
+    AWSCertificateManagerPrivateCAUser
+    AmazonDynamoDBFullAccess (TODO: this can be and should be reduced)
+    
 #### Example of user signing request:
 
 ```json
@@ -37,6 +45,12 @@ Additionali you can add Policy field:
 
 ### AWS Configuration steps (for developers:
 
+1. Create lambda venafi role named lambda-venafi-role andd attach policies to it:
+    ```bash
+    aws iam create role --role-name lambda-venafi-role
+    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AWSCertificateManagerPrivateCAUser
+    ```
 1. Run `make build` to make binaries
 
 1. Create SAM package, it will also deploy lambda binary to s3:
