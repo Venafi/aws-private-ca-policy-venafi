@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
-	"github.com/aws/aws-sdk-go/aws"
 	"net/http"
 	"regexp"
 
@@ -50,8 +50,8 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	ctx := context.TODO()
 
 	//TODO: Parse request body with CSR
-	certRequest := new(ACMPCAIssueCertificateRequest)
-	err = json.Unmarshal([]byte(request.Body), certRequest)
+	var certRequest ACMPCAIssueCertificateRequest
+	err = json.Unmarshal([]byte(request.Body), &certRequest)
 	if err != nil {
 		return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Error unmarshaling JSON: %s", err))
 	}
@@ -62,6 +62,7 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	if pemBlock == nil {
 		return clientError(http.StatusUnprocessableEntity, "PEM block in CSR is nil")
 	}
+
 	parsedCSR, err := x509.ParseCertificateRequest(pemBlock.Bytes)
 	if parsedCSR == nil {
 		return clientError(http.StatusUnprocessableEntity, "Can't parse certificate request")
