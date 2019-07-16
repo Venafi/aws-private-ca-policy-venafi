@@ -1,6 +1,21 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Venafi policy integration for AWS Private CA.
+Parameters:
+  EnvName:
+    Type: String
+  TPPUSER:
+    Type: String
+  TPPPASSWORD:
+    Type: String
+  TPPURL:
+    Type: String
+  CLOUDURL:
+    Type: String
+  CLOUDAPIKEY:
+    Type: String
+  ZONE:
+    Type: String
 Resources:
   #TODO: add ACM PCA configuration ( or maybe do it in separated template
   CertRequestLambda:
@@ -57,6 +72,8 @@ Resources:
       Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/lambda-venafi-role'
       Environment:
         Variables:
+          TPPUSER:
+            Fn::Sub: ${TPPUSER}
           S3_BUCKET: cert-policy-lambda
       Policies:
         - Version: '2012-10-17'
@@ -94,6 +111,26 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
+
+  ScheduledRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "ScheduledRule"
+      ScheduleExpression: "rate(5 minutes)"
+      State: "ENABLED"
+      Targets:
+        -
+          Arn: !GetAtt CertPolicyLambda.Arn
+          Id: "CertPolicyLambda5m"
+
+  PermissionForEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CertPolicyLambda
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt CertPolicyLambda.Arn
+
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
