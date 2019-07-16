@@ -16,7 +16,7 @@ TEST_TIMEOUT?=6m
 test:
 	go test $(TEST) $(TESTARGS)  -v -cover -timeout=$(TEST_TIMEOUT) -parallel=20
 
-build: test build_request build_policy
+build: build_request build_policy
 
 sam_test:
 	for e in `ls fixtures/*-event.json`; do sam local invoke CertRequestLambda -e $$e; done
