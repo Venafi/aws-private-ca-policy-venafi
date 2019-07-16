@@ -14,10 +14,9 @@ TEST ?= $$(go list ./... | grep -v /vendor/ | grep -v /e2e)
 TEST_TIMEOUT?=6m
 
 test:
-#	go test $(TEST) $(TESTARGS) -v -timeout=$(TEST_TIMEOUT) -parallel=20
-	go test github.com/Venafi/aws-private-ca-policy-venafi/request $(TESTARGS) -v -timeout=$(TEST_TIMEOUT) -parallel=20
+	go test $(TEST) $(TESTARGS)  -v -cover -timeout=$(TEST_TIMEOUT) -parallel=20
 
-build: test build_request build_policy sam_package
+build: build_request build_policy
 
 sam_test:
 	for e in `ls fixtures/*-event.json`; do sam local invoke CertRequestLambda -e $$e; done
@@ -98,8 +97,3 @@ sam_invoke_request:
 
 sam_invoke_policy:
 	sam local invoke "CERT_POLICY_LAMBDA_NAME" -e event.json
-
-tests:
-	go test -v -cover common/*
-	go test -v -cover policy/*
-	go test -v -cover request/*
