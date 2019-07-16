@@ -2,22 +2,19 @@ package main
 
 import (
 	"context"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
-	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/Venafi/aws-private-ca-policy-venafi/common"
+	"github.com/Venafi/vcert/pkg/certificate"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
-	"github.com/aws/aws-sdk-go/aws"
-	"net/http"
-	"regexp"
-
-	"github.com/Venafi/aws-private-ca-policy-venafi/common"
 	"github.com/aws/aws-sdk-go-v2/service/acmpca"
 	"log"
+	"net/http"
 )
 
 var (
@@ -26,6 +23,7 @@ var (
 )
 
 //TODO: maybe get those types from sdk somehow
+//most similar structure is github.com/aws/aws-sdk-go-v2/service/acmpca/api_op_IssueCertificate.go:13 IssueCertificateInput
 type ACMPCAIssueCertificateRequest struct {
 	SigningAlgorithm        string `json:"SigningAlgorithm"`
 	CertificateAuthorityArn string `json:"CertificateAuthorityArn"`
@@ -50,24 +48,20 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	ctx := context.TODO()
 
 	//TODO: Parse request body with CSR
-	certRequest := new(ACMPCAIssueCertificateRequest)
-	err = json.Unmarshal([]byte(request.Body), certRequest)
+	var certRequest ACMPCAIssueCertificateRequest
+	err = json.Unmarshal([]byte(request.Body), &certRequest)
 	if err != nil {
 		return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Error unmarshaling JSON: %s", err))
 	}
 
 	csr, _ := base64.StdEncoding.DecodeString(certRequest.Csr)
-	//Decode CSR
-	pemBlock, _ := pem.Decode([]byte(csr))
-	if pemBlock == nil {
-		return clientError(http.StatusUnprocessableEntity, "PEM block in CSR is nil")
-	}
-	parsedCSR, err := x509.ParseCertificateRequest(pemBlock.Bytes)
-	if parsedCSR == nil {
+
+	var req certificate.Request
+	err = req.SetCSR([]byte(csr))
+	if err != nil {
 		return clientError(http.StatusUnprocessableEntity, "Can't parse certificate request")
 	}
 
-	//TODO: Get policies from DB
 	if len(certRequest.Policy) == 0 {
 		certRequest.Policy = "Default"
 	}
@@ -76,50 +70,9 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	if err != nil {
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed get policy from database: %s", err))
 	}
-
-	log.Println(policy)
-	//TODO: Check CSR against policies
-	if !checkStringByRegexp(parsedCSR.Subject.CommonName, policy.SubjectCNRegexes) {
-		return clientError(http.StatusForbidden, fmt.Sprintf("common name %s is not allowed in this policy", parsedCSR.Subject.CommonName))
-	}
-	if !checkStringArrByRegexp(parsedCSR.EmailAddresses, policy.EmailSanRegExs, true) {
-		return clientError(http.StatusForbidden, fmt.Sprintf("emails %v doesn't match regexps: %v", policy.EmailSanRegExs, policy.EmailSanRegExs))
-	}
-	if !checkStringArrByRegexp(parsedCSR.DNSNames, policy.DnsSanRegExs, true) {
-		return clientError(http.StatusForbidden, fmt.Sprintf("DNS sans %v doesn't match regexps: %v", parsedCSR.DNSNames, policy.DnsSanRegExs))
-	}
-	ips := make([]string, len(parsedCSR.IPAddresses))
-	for i, ip := range parsedCSR.IPAddresses {
-		ips[i] = ip.String()
-	}
-	if !checkStringArrByRegexp(ips, policy.IpSanRegExs, true) {
-		return clientError(http.StatusForbidden, fmt.Sprintf("IPs %v doesn't match regexps: %v", policy.IpSanRegExs, policy.IpSanRegExs))
-	}
-	uris := make([]string, len(parsedCSR.URIs))
-	for i, uri := range parsedCSR.URIs {
-		uris[i] = uri.String()
-	}
-	if !checkStringArrByRegexp(uris, policy.UriSanRegExs, true) {
-		return clientError(http.StatusForbidden, fmt.Sprintf("URIs %v doesn't match regexps: %v", uris, policy.UriSanRegExs))
-	}
-	if !checkStringArrByRegexp(parsedCSR.Subject.Organization, policy.SubjectORegexes, false) {
-		return clientError(http.StatusForbidden, fmt.Sprintf("Organization %v doesn't match regexps: %v", policy.SubjectORegexes, policy.SubjectORegexes))
-	}
-
-	if !checkStringArrByRegexp(parsedCSR.Subject.OrganizationalUnit, policy.SubjectOURegexes, false) {
-		return clientError(http.StatusForbidden, fmt.Sprintf("Organization Unit %v doesn't match regexps: %v", parsedCSR.Subject.OrganizationalUnit, policy.SubjectOURegexes))
-	}
-
-	if !checkStringArrByRegexp(parsedCSR.Subject.Country, policy.SubjectCRegexes, false) {
-		return clientError(http.StatusForbidden, fmt.Sprintf("Country %v doesn't match regexps: %v", parsedCSR.Subject.Country, policy.SubjectCRegexes))
-	}
-
-	if !checkStringArrByRegexp(parsedCSR.Subject.Locality, policy.SubjectLRegexes, false) {
-		return clientError(http.StatusForbidden, fmt.Sprintf("Location %v doesn't match regexps: %v", parsedCSR.Subject.Locality, policy.SubjectLRegexes))
-	}
-
-	if !checkStringArrByRegexp(parsedCSR.Subject.Province, policy.SubjectSTRegexes, false) {
-		return clientError(http.StatusForbidden, fmt.Sprintf("State (Province) %v doesn't match regexps: %v", parsedCSR.Subject.Province, policy.SubjectSTRegexes))
+	err = policy.ValidateCertificateRequest(&req)
+	if err != nil {
+		return clientError(http.StatusForbidden, err.Error())
 	}
 
 	//TODO: Issuing ACM certificate
@@ -193,32 +146,6 @@ func clientError(status int, body string) (events.APIGatewayProxyResponse, error
 		StatusCode: status,
 		Body:       fmt.Sprintf(`{ "msg" : "%s" }`, body),
 	}, nil
-}
-
-func checkStringByRegexp(s string, regexs []string) (matched bool) {
-	var err error
-	for _, r := range regexs {
-		matched, err = regexp.MatchString(r, s)
-		if err == nil && matched {
-			return true
-		}
-	}
-	return
-}
-
-func checkStringArrByRegexp(ss []string, regexs []string, optional bool) (matched bool) {
-	if optional && len(ss) == 0 {
-		return true
-	}
-	if len(ss) == 0 {
-		ss = []string{""}
-	}
-	for _, s := range ss {
-		if !checkStringByRegexp(s, regexs) {
-			return false
-		}
-	}
-	return true
 }
 
 func main() {

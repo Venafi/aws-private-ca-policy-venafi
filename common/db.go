@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"github.com/Venafi/vcert/pkg/endpoint"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/dynamodbattribute"
-	"github.com/aws/aws-sdk-go/aws"
 	"os"
 )
 
