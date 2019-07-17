@@ -80,6 +80,16 @@ Resources:
         Variables:
           TPPUSER:
             Fn::Sub: ${TPPUSER}
+          TPPPASSWORD:
+            Fn::Sub: ${TPPPASSWORD}
+          TPPURL:
+            Fn::Sub: ${TPPURL}
+          CLOUDURL:
+            Fn::Sub: ${CLOUDURL}
+          CLOUDAPIKEY:
+            Fn::Sub: ${CLOUDAPIKEY}
+          ZONE:
+            Fn::Sub: ${ZONE}
           S3_BUCKET: cert-policy-lambda
       Policies:
         - Version: '2012-10-17'
