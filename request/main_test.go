@@ -26,7 +26,12 @@ func TestACMPCAHandler(t *testing.T) {
 	jsonBody := strings.TrimSuffix(fmt.Sprintf(ACMPCAJSONRequest, os.Getenv("ACM_ARN"),
 		base64.StdEncoding.EncodeToString(createCSR(cn))), "\n")
 
-	certResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{Body: jsonBody})
+	headers := map[string]string{"X-Amz-Target": "ACMPrivateCA.IssueCertificate"}
+
+	certResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
+		Body:    jsonBody,
+		Headers: headers,
+	})
 	if err != nil {
 		t.Fatalf("Request returned error: %s", err)
 	}
