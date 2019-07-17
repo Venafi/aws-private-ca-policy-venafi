@@ -64,6 +64,8 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 		return venafiACMPCAIssueCertificateRequest(request)
 	case "CertificateManager.RequestCertificate":
 		return venafiACMRequestCertificate(request)
+	case "ACMPrivateCA.ListCertificateAuthorities":
+		return pcaListCertificateAuthorities(request)
 	default:
 		return clientError(http.StatusMethodNotAllowed, "Can't determine requested method")
 	}
@@ -171,6 +173,15 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 		Body:       string(`{ ryba:mech`),
 		StatusCode: 200,
 	}, nil
+}
+
+func pcaListCertificateAuthorities(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	awsCfg, err := external.LoadDefaultAWSConfig()
+	if err != nil {
+		fmt.Println("Error loading client", err)
+	}
+	acmCli := acmpca.New(awsCfg)
+	reqInput
 }
 
 //TODO: Include custom error message into body
