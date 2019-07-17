@@ -59,8 +59,7 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	//TODO: [ListCertificateAuthorities|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_ListCertificateAuthorities.html] (pass-thru)
 	//TODO: [RevokeCertificate|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_RevokeCertificate.html] (pass-thru)
 
-	x_amz_target := request.Headers["X-Amz-Target"]
-	switch x_amz_target {
+	switch request.Headers["X-Amz-Target"] {
 	case "ACMPrivateCA.IssueCertificate":
 		return venafiACMPCAIssueCertificateRequest(request)
 	case "CertificateManager.RequestCertificate":
