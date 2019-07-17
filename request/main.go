@@ -28,7 +28,7 @@ type ACMPCAIssueCertificateRequest struct {
 	SigningAlgorithm        string `json:"SigningAlgorithm"`
 	CertificateAuthorityArn string `json:"CertificateAuthorityArn"`
 	Csr                     string `json:"Csr"`
-	Policy                  string `json:"Policy"`
+	VenafiZone              string `json:"VenafiZone"`
 }
 
 type ACMPCAIssueCertificateResponse struct {
@@ -62,11 +62,11 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 		return clientError(http.StatusUnprocessableEntity, "Can't parse certificate request")
 	}
 
-	if len(certRequest.Policy) == 0 {
-		certRequest.Policy = "Default"
+	if len(certRequest.VenafiZone) == 0 {
+		certRequest.VenafiZone = "Default"
 	}
 
-	policy, err := common.GetPolicy(certRequest.Policy)
+	policy, err := common.GetPolicy(certRequest.VenafiZone)
 	if err != nil {
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed get policy from database: %s", err))
 	}
@@ -75,7 +75,21 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 		return clientError(http.StatusForbidden, err.Error())
 	}
 
-	//TODO: Issuing ACM certificate
+	//TODO: RequestCertificate*|https://docs.aws.amazon.com/acm/latest/APIReference/API_RequestCertificate.html
+	//TODO: DescribeCertificate|https://docs.aws.amazon.com/acm/latest/APIReference/API_DescribeCertificate.html (pass-thru)
+	//TODO: ExportCertificate|https://docs.aws.amazon.com/acm/latest/APIReference/API_ExportCertificate.html (pass-thru)
+	//TODO: GetCertificate|https://docs.aws.amazon.com/acm/latest/APIReference/API_GetCertificate.html] (pass-thru)
+	//TODO: ListCertificates|https://docs.aws.amazon.com/acm/latest/APIReference/API_ListCertificates.html] (pass-thru)
+	//TODO: RenewCertificate|https://docs.aws.amazon.com/acm/latest/APIReference/API_RenewCertificate.html] (pass-thru)
+
+	//## ACM PCA methods that must be accepted by Request Lamdba function:
+	//TODO: [GetCertificate|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_GetCertificate.html] (pass-thru)
+	//TODO: [GetCertificateAuthorityCertificate|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_GetCertificateAuthorityCertificate.html] (pass-thru)
+	//TODO: [*IssueCertificate*|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_IssueCertificate.html]
+	//TODO: [ListCertificateAuthorities|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_ListCertificateAuthorities.html] (pass-thru)
+	//TODO: [RevokeCertificate|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_RevokeCertificate.html] (pass-thru)
+
+	//Issuing ACM certificate
 	awsCfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
 		fmt.Println("Error loading client", err)
