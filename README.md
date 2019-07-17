@@ -27,7 +27,7 @@
 ```
 
 Csr field is a base64 encoded string of actual CSR. This request is the same as ACM PCA IssueCertificate API - https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_IssueCertificate.html
-Additionali you can add Policy field:
+Additionali you can add VenafiZone field:
 
 ```json
 {
@@ -38,7 +38,7 @@ Additionali you can add Policy field:
   },
   "CertificateAuthorityArn": "arn:aws:acm-pca:eu-west-1:123456789:certificate-authority/62x54216-14hf-47cd-98h4-a483a73b149f",
   "Csr": "LS0tLS1CRUd....",
-  "Policy": "aws-lambda-policy"
+  "VenafiZone": "aws-lambda-policy"
 }
 
 ```

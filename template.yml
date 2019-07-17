@@ -2,19 +2,25 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Venafi policy integration for AWS Private CA.
 Parameters:
-  EnvName:
-    Type: String
   TPPUSER:
     Type: String
+    Default: ""
   TPPPASSWORD:
+    NoEcho : "true"
     Type: String
+    Default: ""
   TPPURL:
     Type: String
+    Default: ""
   CLOUDURL:
     Type: String
+    Default: ""
   CLOUDAPIKEY:
+    NoEcho : "true"
+    Default: ""
     Type: String
   ZONE:
+    Default: ""
     Type: String
 Resources:
   #TODO: add ACM PCA configuration ( or maybe do it in separated template
@@ -74,6 +80,16 @@ Resources:
         Variables:
           TPPUSER:
             Fn::Sub: ${TPPUSER}
+          TPPPASSWORD:
+            Fn::Sub: ${TPPPASSWORD}
+          TPPURL:
+            Fn::Sub: ${TPPURL}
+          CLOUDURL:
+            Fn::Sub: ${CLOUDURL}
+          CLOUDAPIKEY:
+            Fn::Sub: ${CLOUDAPIKEY}
+          ZONE:
+            Fn::Sub: ${ZONE}
           S3_BUCKET: cert-policy-lambda
       Policies:
         - Version: '2012-10-17'

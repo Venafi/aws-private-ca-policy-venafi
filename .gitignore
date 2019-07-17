@@ -1,5 +1,6 @@
 .idea
 credentials
+credentials.json
 dist
 example-sam-app
 event.json
