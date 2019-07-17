@@ -43,6 +43,25 @@ func TestACMPCAHandler(t *testing.T) {
 
 }
 
+func TestACMPCAListCA(t *testing.T) {
+
+	headers := map[string]string{"X-Amz-Target": "ACMPrivateCA.ListCertificateAuthorities"}
+
+	certResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
+		Body:    `{"MaxResults": 10}`,
+		Headers: headers,
+	})
+	if err != nil {
+		t.Fatalf("Request returned error: %s", err)
+	}
+
+	if certResp.StatusCode != 200 {
+		t.Fatalf("Request returned code: %d message: %s", certResp.StatusCode, certResp.Body)
+	}
+	t.Logf("Resp is:\n %s", certResp.Body)
+
+}
+
 func checkCertificate(t *testing.T, body string, cn string) {
 	var err error
 	certResponse := new(ACMPCAGetCertificateResponse)

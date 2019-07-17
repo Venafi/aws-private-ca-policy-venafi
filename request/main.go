@@ -60,13 +60,20 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	//TODO: [ListCertificateAuthorities|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_ListCertificateAuthorities.html] (pass-thru)
 	//TODO: [RevokeCertificate|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_RevokeCertificate.html] (pass-thru)
 
+	ctx := context.TODO()
+	awsCfg, err := external.LoadDefaultAWSConfig()
+	if err != nil {
+		fmt.Println("Error loading client", err)
+	}
+	acmCli := acmpca.New(awsCfg)
+
 	switch request.Headers["X-Amz-Target"] {
 	case "ACMPrivateCA.IssueCertificate":
 		return venafiACMPCAIssueCertificateRequest(request)
 	case "CertificateManager.RequestCertificate":
 		return venafiACMRequestCertificate(request)
 	case "ACMPrivateCA.ListCertificateAuthorities":
-		return pcaListCertificateAuthorities(request)
+		return pcaListCertificateAuthorities(request, *acmCli, ctx)
 	default:
 		return clientError(http.StatusMethodNotAllowed, "Can't determine requested method")
 	}
@@ -180,13 +187,27 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 	}, nil
 }
 
-func pcaListCertificateAuthorities(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	awsCfg, err := external.LoadDefaultAWSConfig()
+func pcaListCertificateAuthorities(request events.APIGatewayProxyRequest, acmCli acmpca.Client, ctx context.Context) (events.APIGatewayProxyResponse, error) {
+
+	var req = &acmpca.ListCertificateAuthoritiesInput{}
+	err := json.Unmarshal([]byte(request.Body), req)
 	if err != nil {
-		fmt.Println("Error loading client", err)
+		return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Error unmarshaling JSON: %s", err))
 	}
-	acmCli := acmpca.New(awsCfg)
-	reqInput
+	listCA := acmCli.ListCertificateAuthoritiesRequest(req)
+	listCAresp, err := listCA.Send(ctx)
+	if err != nil {
+		return clientError(http.StatusInternalServerError, fmt.Sprintf("could not get certificate response: %s", err))
+	}
+	respoBodyJSON, err := json.Marshal(listCAresp)
+	if err != nil {
+		return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Error marshaling response JSON: %s", err))
+	}
+
+	return events.APIGatewayProxyResponse{
+		Body:       string(respoBodyJSON),
+		StatusCode: http.StatusOK,
+	}, nil
 }
 
 //TODO: Include custom error message into body
