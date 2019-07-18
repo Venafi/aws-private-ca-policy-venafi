@@ -22,6 +22,11 @@ var (
 	ErrNameNotProvided = errors.New("no name was provided in the HTTP body")
 )
 
+const (
+	acmRequestCertificate  = "CertificateManager.RequestCertificate"
+	acmpcaIssueCertificate = "ACMPrivateCA.IssueCertificate"
+)
+
 type ACMPCAIssueCertificateRequest struct {
 	acmpca.IssueCertificateInput
 	VenafiZone string `json:"VenafiZone"`
@@ -50,21 +55,16 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	//TODO: [*IssueCertificate*|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_IssueCertificate.html]
 
 	ctx := context.TODO()
-	awsCfg, err := external.LoadDefaultAWSConfig()
-	if err != nil {
-		fmt.Println("Error loading client", err)
-	}
-	acmCli := acmpca.New(awsCfg)
 
 	switch request.Headers["X-Amz-Target"] {
-	case "ACMPrivateCA.IssueCertificate":
+	case acmpcaIssueCertificate:
 		return venafiACMPCAIssueCertificateRequest(request)
-	case "CertificateManager.RequestCertificate":
+	case acmRequestCertificate:
 		return venafiACMRequestCertificate(request)
 	case acmpcaListCertificateAuthorities:
-		return passThru(request, *acmCli, ctx, acmpcaListCertificateAuthorities)
+		return passThru(request, ctx, acmpcaListCertificateAuthorities)
 	case acmpcaGetCertificate:
-		return passThru(request, *acmCli, ctx, acmpcaGetCertificate)
+		return passThru(request, ctx, acmpcaGetCertificate)
 	default:
 		return clientError(http.StatusMethodNotAllowed, "Can't determine requested method")
 	}
@@ -79,7 +79,7 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 	var certRequest ACMPCAIssueCertificateRequest
 	err = json.Unmarshal([]byte(request.Body), &certRequest)
 	if err != nil {
-		return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Error unmarshaling JSON: %s", err))
+		return clientError(http.StatusUnprocessableEntity, fmt.Sprintf(errUnmarshalJson, acmpcaIssueCertificate, err))
 	}
 
 	csr, err := base64.StdEncoding.DecodeString(string(certRequest.Csr))
@@ -108,7 +108,7 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 	//Issuing ACM certificate
 	awsCfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
-		fmt.Println("Error loading client", err)
+		return clientError(http.StatusInternalServerError, fmt.Sprintf("Error loading client: %s", err))
 	}
 	acmCli := acmpca.New(awsCfg)
 	caReqInput := acmCli.IssueCertificateRequest(&certRequest.IssueCertificateInput)
@@ -120,7 +120,7 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 
 	respoBodyJSON, err := json.Marshal(csrResp)
 	if err != nil {
-		return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Error marshaling response JSON: %s", err))
+		return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Error marshaling response JSON for target %s: %s", acmpcaIssueCertificate, err))
 	}
 
 	return events.APIGatewayProxyResponse{
