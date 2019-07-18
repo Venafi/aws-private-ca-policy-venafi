@@ -43,22 +43,36 @@ func TestACMPCAHandler(t *testing.T) {
 
 }
 
-func TestACMPCAListCA(t *testing.T) {
+func TestPassThru(t *testing.T) {
+	//## ACM methods that must be accepted by Request Lamdba function:
+	//TODO: DescribeCertificate|https://docs.aws.amazon.com/acm/latest/APIReference/API_DescribeCertificate.html (pass-thru)
+	//TODO: ExportCertificate|https://docs.aws.amazon.com/acm/latest/APIReference/API_ExportCertificate.html (pass-thru)
+	//TODO: GetCertificate|https://docs.aws.amazon.com/acm/latest/APIReference/API_GetCertificate.html] (pass-thru)
+	//TODO: ListCertificates|https://docs.aws.amazon.com/acm/latest/APIReference/API_ListCertificates.html] (pass-thru)
+	//TODO: RenewCertificate|https://docs.aws.amazon.com/acm/latest/APIReference/API_RenewCertificate.html] (pass-thru)
 
-	headers := map[string]string{"X-Amz-Target": "ACMPrivateCA.ListCertificateAuthorities"}
+	//## ACM PCA methods that must be accepted by Request Lamdba function:
+	//TODO: [GetCertificate|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_GetCertificate.html] (pass-thru)
+	//TODO: [GetCertificateAuthorityCertificate|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_GetCertificateAuthorityCertificate.html] (pass-thru)
+	//TODO: [RevokeCertificate|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_RevokeCertificate.html] (pass-thru)
+	var headers map[string]string
+	targets := map[string]string{"ACMPrivateCA.ListCertificateAuthorities": `{"MaxResults": 10}`}
 
-	certResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
-		Body:    `{"MaxResults": 10}`,
-		Headers: headers,
-	})
-	if err != nil {
-		t.Fatalf("Request returned error: %s", err)
+	for target, body := range targets {
+		headers = map[string]string{"X-Amz-Target": target}
+		certResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
+			Body:    body,
+			Headers: headers,
+		})
+		if err != nil {
+			t.Fatalf("Request returned error: %s", err)
+		}
+
+		if certResp.StatusCode != 200 {
+			t.Fatalf("Request returned code: %d message: %s", certResp.StatusCode, certResp.Body)
+		}
+		t.Logf("Resp is:\n %s", certResp.Body)
 	}
-
-	if certResp.StatusCode != 200 {
-		t.Fatalf("Request returned code: %d message: %s", certResp.StatusCode, certResp.Body)
-	}
-	t.Logf("Resp is:\n %s", certResp.Body)
 
 }
 
