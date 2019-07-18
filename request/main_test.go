@@ -43,6 +43,45 @@ func TestACMPCAHandler(t *testing.T) {
 
 }
 
+func TestPassThru(t *testing.T) {
+	//## ACM methods that must be accepted by Request Lamdba function:
+	//TODO: DescribeCertificate|https://docs.aws.amazon.com/acm/latest/APIReference/API_DescribeCertificate.html (pass-thru)
+	//TODO: ExportCertificate|https://docs.aws.amazon.com/acm/latest/APIReference/API_ExportCertificate.html (pass-thru)
+	//TODO: GetCertificate|https://docs.aws.amazon.com/acm/latest/APIReference/API_GetCertificate.html] (pass-thru)
+	//TODO: ListCertificates|https://docs.aws.amazon.com/acm/latest/APIReference/API_ListCertificates.html] (pass-thru)
+	//TODO: RenewCertificate|https://docs.aws.amazon.com/acm/latest/APIReference/API_RenewCertificate.html] (pass-thru)
+
+	//## ACM PCA methods that must be accepted by Request Lamdba function:
+	//TODO: [GetCertificate|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_GetCertificate.html] (pass-thru)
+	//TODO: [GetCertificateAuthorityCertificate|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_GetCertificateAuthorityCertificate.html] (pass-thru)
+	//TODO: [RevokeCertificate|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_RevokeCertificate.html] (pass-thru)
+	var headers map[string]string
+	targets := map[string]string{
+		acmpcaListCertificateAuthorities: `{"MaxResults": 10}`,
+		acmpcaGetCertificate: `{
+		  "CertificateArn": "arn:aws:acm-pca:region:account:certificate-authority/12345678-1234-1234-1234-123456789012/certificate/e8cbd2bedb122329f97706bcfec990f8",
+		  "CertificateAuthorityArn": "arn:aws:acm-pca:region:account:certificate-authority/12345678-1234-1234-1234-123456789012"
+		}`,
+	}
+
+	for target, body := range targets {
+		headers = map[string]string{"X-Amz-Target": target}
+		certResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
+			Body:    body,
+			Headers: headers,
+		})
+		if err != nil {
+			t.Fatalf("Request returned error: %s", err)
+		}
+
+		if certResp.StatusCode != 200 {
+			t.Fatalf("Request returned code: %d message: %s", certResp.StatusCode, certResp.Body)
+		}
+		t.Logf("Resp is:\n %s", certResp.Body)
+	}
+
+}
+
 func checkCertificate(t *testing.T, body string, cn string) {
 	var err error
 	certResponse := new(ACMPCAGetCertificateResponse)
