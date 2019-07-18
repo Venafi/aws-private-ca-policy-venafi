@@ -73,7 +73,7 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	case "CertificateManager.RequestCertificate":
 		return venafiACMRequestCertificate(request)
 	case "ACMPrivateCA.ListCertificateAuthorities":
-		return pcaListCertificateAuthorities(request, *acmCli, ctx)
+		return passThru(request, *acmCli, ctx, "ACMPrivateCA.ListCertificateAuthorities")
 	default:
 		return clientError(http.StatusMethodNotAllowed, "Can't determine requested method")
 	}
@@ -187,27 +187,33 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 	}, nil
 }
 
-func pcaListCertificateAuthorities(request events.APIGatewayProxyRequest, acmCli acmpca.Client, ctx context.Context) (events.APIGatewayProxyResponse, error) {
+func passThru(request events.APIGatewayProxyRequest, acmCli acmpca.Client, ctx context.Context, target string) (events.APIGatewayProxyResponse, error) {
 
-	var req = &acmpca.ListCertificateAuthoritiesInput{}
-	err := json.Unmarshal([]byte(request.Body), req)
-	if err != nil {
-		return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Error unmarshaling JSON: %s", err))
-	}
-	listCA := acmCli.ListCertificateAuthoritiesRequest(req)
-	listCAresp, err := listCA.Send(ctx)
-	if err != nil {
-		return clientError(http.StatusInternalServerError, fmt.Sprintf("could not get certificate response: %s", err))
-	}
-	respoBodyJSON, err := json.Marshal(listCAresp)
-	if err != nil {
-		return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Error marshaling response JSON: %s", err))
+	var err error
+	switch target {
+	case "ACMPrivateCA.ListCertificateAuthorities":
+		var req = &acmpca.ListCertificateAuthoritiesInput{}
+		err = json.Unmarshal([]byte(request.Body), req)
+		if err != nil {
+			return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Error unmarshaling JSON: %s", err))
+		}
+		listCA := acmCli.ListCertificateAuthoritiesRequest(req)
+		listCAresp, err := listCA.Send(ctx)
+		if err != nil {
+			return clientError(http.StatusInternalServerError, fmt.Sprintf("could not get certificate response: %s", err))
+		}
+		respoBodyJSON, err := json.Marshal(listCAresp)
+		if err != nil {
+			return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Error marshaling response JSON: %s", err))
+		}
+		return events.APIGatewayProxyResponse{
+			Body:       string(respoBodyJSON),
+			StatusCode: http.StatusOK,
+		}, nil
+	default:
+		return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Don't know hot to pass thru target: %s", target))
 	}
 
-	return events.APIGatewayProxyResponse{
-		Body:       string(respoBodyJSON),
-		StatusCode: http.StatusOK,
-	}, nil
 }
 
 //TODO: Include custom error message into body
