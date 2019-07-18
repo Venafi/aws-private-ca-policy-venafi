@@ -56,7 +56,13 @@ func TestPassThru(t *testing.T) {
 	//TODO: [GetCertificateAuthorityCertificate|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_GetCertificateAuthorityCertificate.html] (pass-thru)
 	//TODO: [RevokeCertificate|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_RevokeCertificate.html] (pass-thru)
 	var headers map[string]string
-	targets := map[string]string{"ACMPrivateCA.ListCertificateAuthorities": `{"MaxResults": 10}`}
+	targets := map[string]string{
+		acmpcaListCertificateAuthorities: `{"MaxResults": 10}`,
+		acmpcaGetCertificate: `{
+		  "CertificateArn": "arn:aws:acm-pca:region:account:certificate-authority/12345678-1234-1234-1234-123456789012/certificate/e8cbd2bedb122329f97706bcfec990f8",
+		  "CertificateAuthorityArn": "arn:aws:acm-pca:region:account:certificate-authority/12345678-1234-1234-1234-123456789012"
+		}`,
+	}
 
 	for target, body := range targets {
 		headers = map[string]string{"X-Amz-Target": target}

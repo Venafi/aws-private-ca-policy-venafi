@@ -9,6 +9,19 @@ import (
 	"net/http"
 )
 
+const (
+	acmDescribeCertificate = "CertificateManager.DescribeCertificate"
+	acmExportCertificate   = "CertificateManager.ExportCertificate"
+	acmGetCertificate      = "CertificateManager.GetCertificate"
+	acmListCertificates    = "CertificateManager.ListCertificates"
+	acmRenewCertificate    = "CertificateManager.RenewCertificate"
+
+	acmpcaGetCertificate                     = "ACMPrivateCA.GetCertificate"
+	acmpcaListCertificateAuthorities         = "ACMPrivateCA.ListCertificateAuthorities"
+	acmpcaGetCertificateAuthorityCertificate = "ACMPrivateCA.GetCertificateAuthorityCertificate"
+	acmpcaRevokeCertificate                  = "ACMPrivateCA.RevokeCertificate"
+)
+
 func passThru(request events.APIGatewayProxyRequest, acmCli acmpca.Client, ctx context.Context, target string) (events.APIGatewayProxyResponse, error) {
 
 	//## ACM methods that must be accepted by Request Lamdba function:
@@ -27,7 +40,16 @@ func passThru(request events.APIGatewayProxyRequest, acmCli acmpca.Client, ctx c
 	var err error
 
 	switch target {
-	case "ACMPrivateCA.GetCertificate":
+	case acmDescribeCertificate:
+	case acmExportCertificate:
+	case acmGetCertificate:
+	case acmListCertificates:
+	case acmRenewCertificate:
+
+	case acmpcaGetCertificateAuthorityCertificate:
+	case acmpcaRevokeCertificate:
+
+	case acmpcaGetCertificate:
 		var req = &acmpca.GetCertificateInput{}
 		err = json.Unmarshal([]byte(request.Body), req)
 		if err != nil {
@@ -41,7 +63,7 @@ func passThru(request events.APIGatewayProxyRequest, acmCli acmpca.Client, ctx c
 			return clientError(http.StatusInternalServerError, fmt.Sprintf("Could not get response from target %s: %s", target, err))
 		}
 		respoBodyJSON, err = json.Marshal(doRequestResponse)
-	case "ACMPrivateCA.ListCertificateAuthorities":
+	case acmpcaListCertificateAuthorities:
 		var req = &acmpca.ListCertificateAuthoritiesInput{}
 		err = json.Unmarshal([]byte(request.Body), req)
 		if err != nil {

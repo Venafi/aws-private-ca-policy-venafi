@@ -61,8 +61,10 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 		return venafiACMPCAIssueCertificateRequest(request)
 	case "CertificateManager.RequestCertificate":
 		return venafiACMRequestCertificate(request)
-	case "ACMPrivateCA.ListCertificateAuthorities":
-		return passThru(request, *acmCli, ctx, "ACMPrivateCA.ListCertificateAuthorities")
+	case acmpcaListCertificateAuthorities:
+		return passThru(request, *acmCli, ctx, acmpcaListCertificateAuthorities)
+	case acmpcaGetCertificate:
+		return passThru(request, *acmCli, ctx, acmpcaGetCertificate)
 	default:
 		return clientError(http.StatusMethodNotAllowed, "Can't determine requested method")
 	}
