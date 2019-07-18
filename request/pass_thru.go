@@ -22,6 +22,11 @@ const (
 	acmpcaRevokeCertificate                  = "ACMPrivateCA.RevokeCertificate"
 )
 
+const (
+	errUnmarshalJson = "Error unmarshaling JSON for %s: %s"
+	errNoResponse    = "Could not get response from target %s: %s"
+)
+
 func passThru(request events.APIGatewayProxyRequest, acmCli acmpca.Client, ctx context.Context, target string) (events.APIGatewayProxyResponse, error) {
 
 	//## ACM methods that must be accepted by Request Lamdba function:
@@ -53,28 +58,28 @@ func passThru(request events.APIGatewayProxyRequest, acmCli acmpca.Client, ctx c
 		var req = &acmpca.GetCertificateInput{}
 		err = json.Unmarshal([]byte(request.Body), req)
 		if err != nil {
-			return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Error unmarshaling JSON for %s: %s", target, err))
+			return clientError(http.StatusUnprocessableEntity, fmt.Sprintf(errUnmarshalJson, target, err))
 		}
 
 		doRequest := acmCli.GetCertificateRequest(req)
 		var doRequestResponse *acmpca.GetCertificateResponse
 		doRequestResponse, err = doRequest.Send(ctx)
 		if err != nil {
-			return clientError(http.StatusInternalServerError, fmt.Sprintf("Could not get response from target %s: %s", target, err))
+			return clientError(http.StatusInternalServerError, fmt.Sprintf(errNoResponse, target, err))
 		}
 		respoBodyJSON, err = json.Marshal(doRequestResponse)
 	case acmpcaListCertificateAuthorities:
 		var req = &acmpca.ListCertificateAuthoritiesInput{}
 		err = json.Unmarshal([]byte(request.Body), req)
 		if err != nil {
-			return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Error unmarshaling JSON for %s: %s", target, err))
+			return clientError(http.StatusUnprocessableEntity, fmt.Sprintf(errUnmarshalJson, target, err))
 		}
 
 		doRequest := acmCli.ListCertificateAuthoritiesRequest(req)
 		var doRequestResponse *acmpca.ListCertificateAuthoritiesResponse
 		doRequestResponse, err = doRequest.Send(ctx)
 		if err != nil {
-			return clientError(http.StatusInternalServerError, fmt.Sprintf("Could not get response from target %s: %s", target, err))
+			return clientError(http.StatusInternalServerError, fmt.Sprintf(errNoResponse, target, err))
 		}
 		respoBodyJSON, err = json.Marshal(doRequestResponse)
 	default:
