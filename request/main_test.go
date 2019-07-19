@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -10,6 +11,8 @@ import (
 	"encoding/pem"
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-sdk-go-v2/aws/external"
+	"github.com/aws/aws-sdk-go-v2/service/acmpca"
 	mrand "math/rand"
 	"os"
 	"testing"
@@ -33,11 +36,24 @@ const (
 )
 
 func TestACMPCACertificate(t *testing.T) {
+	ctx := context.TODO()
+
+	acmpcaArn := os.Getenv("ACMPCA_ARN")
+	if len(acmpcaArn) < 1 {
+		t.Fatalf("ACMPCA is empty")
+	}
+
+	awsCfg, err := external.LoadDefaultAWSConfig()
+	if err != nil {
+		t.Fatalf("Can't get AWS configuration: %s", err)
+	}
+	acmpcaCli := acmpca.New(awsCfg)
+
 	cn := randSeq(9) + ".example.com"
-	jsonBody := fmt.Sprintf(ACMPCAJSONRequest, os.Getenv("ACMPCA_ARN"),
+	jsonBody := fmt.Sprintf(ACMPCAJSONRequest, acmpcaArn,
 		base64.StdEncoding.EncodeToString(createCSR(cn)))
 
-	headers := map[string]string{"X-Amz-Target": "ACMPrivateCA.IssueCertificate"}
+	headers := map[string]string{"X-Amz-Target": acmpcaIssueCertificate}
 
 	issueCertResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
 		Body:    jsonBody,
@@ -57,7 +73,19 @@ func TestACMPCACertificate(t *testing.T) {
 		t.Fatalf("Cant process response json: %s", err)
 	}
 
-	jsonBody = fmt.Sprintf(acmpcaGetCertificateRequest, issueResponse.CertificateArn, os.Getenv("ACMPCA_ARN"))
+	headers = map[string]string{"X-Amz-Target": acmpcaGetCertificate}
+	jsonBody = fmt.Sprintf(acmpcaGetCertificateRequest, issueResponse.CertificateArn, acmpcaArn)
+
+	getReq := &acmpca.GetCertificateInput{
+		CertificateArn:          &issueResponse.CertificateArn,
+		CertificateAuthorityArn: &acmpcaArn,
+	}
+
+	err = acmpcaCli.WaitUntilCertificateIssued(ctx, getReq)
+	if err != nil {
+		t.Fatalf("Error while waiting for certificate: %s\n", err)
+	}
+
 	requestCertResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
 		Body:    jsonBody,
 		Headers: headers,
