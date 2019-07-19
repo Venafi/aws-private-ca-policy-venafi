@@ -99,3 +99,17 @@ sam_invoke_request:
 
 sam_invoke_policy:
 	sam local invoke "CERT_POLICY_LAMBDA_NAME" -e event.json
+
+acmpca_create:
+	aws acm-pca create-certificate-authority --certificate-authority-configuration file://fixtures/acmpca-test-config.json \
+	--certificate-authority-type "ROOT"|jq -r .CertificateAuthorityArn > CertificateAuthorityArn.txt
+
+acmpca_import:
+	aws acm-pca import-certificate-authority-certificate --certificate-authority-arn $$(cat CertificateAuthorityArn.txt) --certificate file://fixtures/rootCA.crt
+
+acmpca_delete:
+	aws acm-pca delete-certificate-authority --certificate-authority-arn $$(cat CertificateAuthorityArn.txt) --permanent-deletion-time-in-days 7
+
+acmpca_list:
+	@aws acm-pca list-certificate-authorities
+

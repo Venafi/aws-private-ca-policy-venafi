@@ -1,5 +1,6 @@
 .idea
 credentials
+CertificateAuthorityArn.txt
 credentials.json
 dist
 example-sam-app
