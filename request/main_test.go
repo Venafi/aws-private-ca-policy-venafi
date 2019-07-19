@@ -17,6 +17,9 @@ import (
 )
 
 const (
+	wrongResponseCode = "Request returned code: %d message: %s"
+)
+const (
 	ACMPCAJSONRequest = `{
 		"SigningAlgorithm":"SHA256WITHRSA",
 		"Validity": {"Type": "DAYS","Value": 365},
@@ -45,7 +48,7 @@ func TestACMPCACertificate(t *testing.T) {
 	}
 
 	if issueCertResp.StatusCode != 200 {
-		t.Fatalf("Request returned code: %d message: %s", issueCertResp.StatusCode, issueCertResp.Body)
+		t.Fatalf(wrongResponseCode, issueCertResp.StatusCode, issueCertResp.Body)
 	}
 
 	issueResponse := new(ACMPCAIssueCertificateResponse)
@@ -63,7 +66,23 @@ func TestACMPCACertificate(t *testing.T) {
 		t.Fatalf("Cant get certificate: %s", err)
 	}
 
-	checkCertificate(t, requestCertResp.Body, cn)
+	if requestCertResp.StatusCode != 200 {
+		t.Fatalf(wrongResponseCode, requestCertResp.StatusCode, requestCertResp.Body)
+	}
+
+	certResponse := new(ACMPCAGetCertificateResponse)
+	err = json.Unmarshal([]byte(requestCertResp.Body), certResponse)
+
+	if err != nil {
+		t.Fatalf("Cant process response json: %s", err)
+	}
+
+	if len(certResponse.Certificate) < 1 {
+		t.Fatalf("Certificate field in json is empty.")
+	}
+	rawCert := certResponse.Certificate
+
+	checkCertificate(t, rawCert, cn)
 
 }
 
@@ -99,27 +118,17 @@ func TestPassThru(t *testing.T) {
 		}
 
 		if certResp.StatusCode != 200 {
-			t.Fatalf("Request returned code: %d message: %s", certResp.StatusCode, certResp.Body)
+			t.Fatalf(wrongResponseCode, certResp.StatusCode, certResp.Body)
 		}
 		t.Logf("Resp is:\n %s", certResp.Body)
 	}
 
 }
 
-func checkCertificate(t *testing.T, body string, cn string) {
+func checkCertificate(t *testing.T, rawCert string, cn string) {
 
 	var err error
-	certResponse := new(ACMPCAGetCertificateResponse)
-	err = json.Unmarshal([]byte(body), certResponse)
 
-	if err != nil {
-		t.Fatalf("Cant process response json: %s", err)
-	}
-
-	if len(certResponse.Certificate) < 1 {
-		t.Fatalf("Certificate field in json is empty.")
-	}
-	rawCert := certResponse.Certificate
 	pemBlock, _ := pem.Decode([]byte(rawCert))
 	if pemBlock.Bytes == nil {
 		t.Fatalf("Certificate PEM is nil")
@@ -131,7 +140,7 @@ func checkCertificate(t *testing.T, body string, cn string) {
 	if cert.Subject.CommonName != cn {
 		t.Fatalf("Common name is not as expected")
 	}
-	t.Logf("Certificate is ok:\n %s", certResponse.Certificate)
+	t.Logf("Certificate is ok:\n %s", rawCert)
 }
 
 func createCSR(cn string) []byte {
