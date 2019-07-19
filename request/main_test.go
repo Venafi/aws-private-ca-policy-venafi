@@ -24,19 +24,19 @@ const (
 	}`
 	acmpcaListCertificateAuthoritiesRequest = `{"MaxResults": 10}`
 	acmpcaGetCertificateRequest             = `{
-		"CertificateArn": "arn:aws:acm-pca:region:account:certificate-authority/12345678-1234-1234-1234-123456789012/certificate/e8cbd2bedb122329f97706bcfec990f8"
+		"CertificateArn": "%s"
 		,"CertificateAuthorityArn": "%s"
 	}`
 )
 
-func TestACMPCAHandler(t *testing.T) {
+func TestACMPCACertificate(t *testing.T) {
 	cn := randSeq(9) + ".example.com"
-	jsonBody := fmt.Sprintf(ACMPCAJSONRequest, os.Getenv("ACM_ARN"),
+	jsonBody := fmt.Sprintf(ACMPCAJSONRequest, os.Getenv("ACMPCA_ARN"),
 		base64.StdEncoding.EncodeToString(createCSR(cn)))
 
 	headers := map[string]string{"X-Amz-Target": "ACMPrivateCA.IssueCertificate"}
 
-	certResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
+	issueCertResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
 		Body:    jsonBody,
 		Headers: headers,
 	})
@@ -44,10 +44,26 @@ func TestACMPCAHandler(t *testing.T) {
 		t.Fatalf("Request returned error: %s", err)
 	}
 
-	if certResp.StatusCode != 200 {
-		t.Fatalf("Request returned code: %d message: %s", certResp.StatusCode, certResp.Body)
+	if issueCertResp.StatusCode != 200 {
+		t.Fatalf("Request returned code: %d message: %s", issueCertResp.StatusCode, issueCertResp.Body)
 	}
-	checkCertificate(t, certResp.Body, cn)
+
+	issueResponse := new(ACMPCAIssueCertificateResponse)
+	err = json.Unmarshal([]byte(issueCertResp.Body), issueResponse)
+	if err != nil {
+		t.Fatalf("Cant process response json: %s", err)
+	}
+
+	jsonBody = fmt.Sprintf(acmpcaGetCertificateRequest, issueResponse.CertificateArn, os.Getenv("ACMPCA_ARN"))
+	requestCertResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
+		Body:    jsonBody,
+		Headers: headers,
+	})
+	if err != nil {
+		t.Fatalf("Cant get certificate: %s", err)
+	}
+
+	checkCertificate(t, requestCertResp.Body, cn)
 
 }
 
@@ -91,11 +107,17 @@ func TestPassThru(t *testing.T) {
 }
 
 func checkCertificate(t *testing.T, body string, cn string) {
+
 	var err error
 	certResponse := new(ACMPCAGetCertificateResponse)
 	err = json.Unmarshal([]byte(body), certResponse)
+
 	if err != nil {
 		t.Fatalf("Cant process response json: %s", err)
+	}
+
+	if len(certResponse.Certificate) < 1 {
+		t.Fatalf("Certificate field in json is empty.")
 	}
 	rawCert := certResponse.Certificate
 	pemBlock, _ := pem.Decode([]byte(rawCert))

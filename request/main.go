@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"crypto/x509/pkix"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -94,12 +93,8 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 		return clientError(http.StatusUnprocessableEntity, fmt.Sprintf(errUnmarshalJson, acmpcaIssueCertificate, err))
 	}
 
-	csr, err := base64.StdEncoding.DecodeString(string(certRequest.Csr))
-	if err != nil {
-		return clientError(http.StatusUnprocessableEntity, "Can`t decode csr from base64")
-	}
 	var req certificate.Request
-	err = req.SetCSR([]byte(csr))
+	err = req.SetCSR([]byte(certRequest.IssueCertificateInput.Csr))
 	if err != nil {
 		return clientError(http.StatusUnprocessableEntity, "Can't parse certificate request")
 	}
