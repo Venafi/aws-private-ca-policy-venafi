@@ -102,7 +102,7 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 
 	policy, err := common.GetPolicy(certRequest.VenafiZone)
 	if err != nil {
-		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed get policy from database: %s", err))
+		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed to get policy from database: %s", err))
 	}
 	err = policy.ValidateCertificateRequest(&req)
 	if err != nil {
@@ -119,7 +119,7 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 
 	csrResp, err := caReqInput.Send(ctx)
 	if err != nil {
-		return clientError(http.StatusInternalServerError, fmt.Sprintf("could not get certificate response: %s", err))
+		return clientError(http.StatusInternalServerError, fmt.Sprintf("Could not get certificate response: %s", err))
 	}
 
 	respoBodyJSON, err := json.Marshal(csrResp)
@@ -168,7 +168,7 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 
 	certResp, err := caReqInput.Send(ctx)
 	if err != nil {
-		return clientError(http.StatusInternalServerError, fmt.Sprintf("could not get certificate response: %s", err))
+		return clientError(http.StatusInternalServerError, fmt.Sprintf("Could not get certificate response: %s", err))
 	}
 
 	respoBodyJSON, err := json.Marshal(certResp)

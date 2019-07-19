@@ -34,7 +34,7 @@ Resources:
       MemorySize: 512
       Timeout: 10
       #TODO: get role from parameters
-      #TODO: attach AWSCertificateManagerPrivateCAUser role to lambda
+      #TODO: attach AWSCertificateManagerPrivateCAUser role to Lambda
       #TODO: provide json for creating a role
       Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/lambda-venafi-role'
       Environment:
@@ -148,8 +148,8 @@ Resources:
       SourceArn: !GetAtt CertPolicyLambda.Arn
 
 Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
+  # This API creates a role and manages Venafi policies for enrolling certificates with an Amazon private CA.
+  # To find out more about implicit resources, you can review Serverless Application Model (SAM) that is generated.
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   CertRequestApi:
     Description: "API Gateway endpoint URL for Prod stage for Hello World function"

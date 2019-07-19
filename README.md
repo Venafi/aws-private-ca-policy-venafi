@@ -27,7 +27,7 @@
 ```
 
 Csr field is a base64 encoded string of actual CSR. This request is the same as ACM PCA IssueCertificate API - https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_IssueCertificate.html
-Additionali you can add VenafiZone field:
+Additionally you can add VenafiZone field:
 
 ```json
 {
@@ -43,9 +43,9 @@ Additionali you can add VenafiZone field:
 
 ```
 
-### AWS Configuration steps (for developers:
+### AWS Configuration steps (for developers):
 
-1. Create lambda venafi role named lambda-venafi-role andd attach policies to it:
+1. Create a lambda venafi role named lambda-venafi-role andd attach policies to it:
     ```bash
     aws iam create role --role-name lambda-venafi-role
     aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
@@ -60,7 +60,7 @@ Additionali you can add VenafiZone field:
             --s3-bucket venafi-pca-policy
     ```
 
-1. Deploy stack to AWS:
+1. Deploy the SAM package to AWS:
     ```bash
     sam deploy \
         --template-file packaged.yaml \
@@ -69,9 +69,9 @@ Additionali you can add VenafiZone field:
         --region <put your region here>
     ```
 
-1. Copy resource-policy-example.json to resource-policy.json and edit it
+1. Copy resource-policy-example.json to resource-policy.json and and customize the settings.
 
-1. Apply policy to API endpoint (you can get api-id by running command `aws apigateway get-rest-apis`)
+1. Apply the policy to the API endpoint. To get the api-id, run the `aws apigateway get-rest-apis` command.
     ```bash
     aws apigateway update-rest-api \
         --rest-api-id api-id \
