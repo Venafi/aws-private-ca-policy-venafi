@@ -25,6 +25,7 @@ var (
 const (
 	acmRequestCertificate  = "CertificateManager.RequestCertificate"
 	acmpcaIssueCertificate = "ACMPrivateCA.IssueCertificate"
+	defaultZone            = "Default"
 )
 
 type ACMPCAIssueCertificateRequest struct {
@@ -93,7 +94,7 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 	}
 
 	if certRequest.VenafiZone == "" {
-		certRequest.VenafiZone = "Default"
+		certRequest.VenafiZone = defaultZone
 	}
 
 	policy, err := common.GetPolicy(certRequest.VenafiZone)
@@ -144,7 +145,7 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 	req.CsrOrigin = certificate.ServiceGeneratedCSR
 
 	if certRequest.VenafiZone == "" {
-		certRequest.VenafiZone = "Default"
+		certRequest.VenafiZone = defaultZone
 	}
 	policy, err := common.GetPolicy(certRequest.VenafiZone)
 	if err != nil {
@@ -180,9 +181,16 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 
 //TODO: Include custom error message into body
 func clientError(status int, body string) (events.APIGatewayProxyResponse, error) {
+	temp := struct {
+		Msg string `json:"msg"`
+	}{
+		body,
+	}
+	b, _ := json.Marshal(temp)
+
 	return events.APIGatewayProxyResponse{
 		StatusCode: status,
-		Body:       fmt.Sprintf(`{ "msg" : "%s" }`, body),
+		Body:       string(b),
 	}, nil
 }
 
