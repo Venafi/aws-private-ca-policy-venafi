@@ -5,7 +5,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/Venafi/aws-private-ca-policy-venafi/common"
 	"github.com/Venafi/vcert/pkg/certificate"
@@ -17,15 +16,19 @@ import (
 	"net/http"
 )
 
-var (
-	// ErrNameNotProvided is thrown when a name is not provided
-	ErrNameNotProvided = errors.New("no name was provided in the HTTP body")
-)
+type venafiError string
+
+func (e venafiError) Error() string {
+	return string(e)
+}
 
 const (
 	acmRequestCertificate  = "CertificateManager.RequestCertificate"
 	acmpcaIssueCertificate = "ACMPrivateCA.IssueCertificate"
 	defaultZone            = "Default"
+
+	// ErrNameNotProvided is thrown when a name is not provided
+	ErrNameNotProvided venafiError = "no name was provided in the HTTP body"
 )
 
 type ACMPCAIssueCertificateRequest struct {
