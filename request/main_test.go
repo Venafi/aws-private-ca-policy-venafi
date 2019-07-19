@@ -12,19 +12,27 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	mrand "math/rand"
 	"os"
-	"strings"
 	"testing"
 	"time"
 )
 
 const (
-	ACMPCAJSONRequest = `{"SigningAlgorithm":"SHA256WITHRSA","Validity": {"Type": "DAYS","Value": 365},"CertificateAuthorityArn": "%s","Csr": "%s"}`
+	ACMPCAJSONRequest = `{
+		"SigningAlgorithm":"SHA256WITHRSA",
+		"Validity": {"Type": "DAYS","Value": 365},
+		"CertificateAuthorityArn": "%s","Csr": "%s"
+	}`
+	acmpcaListCertificateAuthoritiesRequest = `{"MaxResults": 10}`
+	acmpcaGetCertificateRequest             = `{
+		"CertificateArn": "arn:aws:acm-pca:region:account:certificate-authority/12345678-1234-1234-1234-123456789012/certificate/e8cbd2bedb122329f97706bcfec990f8"
+		,"CertificateAuthorityArn": "%s"
+	}`
 )
 
 func TestACMPCAHandler(t *testing.T) {
 	cn := randSeq(9) + ".example.com"
-	jsonBody := strings.TrimSuffix(fmt.Sprintf(ACMPCAJSONRequest, os.Getenv("ACM_ARN"),
-		base64.StdEncoding.EncodeToString(createCSR(cn))), "\n")
+	jsonBody := fmt.Sprintf(ACMPCAJSONRequest, os.Getenv("ACM_ARN"),
+		base64.StdEncoding.EncodeToString(createCSR(cn)))
 
 	headers := map[string]string{"X-Amz-Target": "ACMPrivateCA.IssueCertificate"}
 
