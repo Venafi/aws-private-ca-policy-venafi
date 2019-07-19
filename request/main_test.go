@@ -22,15 +22,21 @@ const (
 	wrongResponseCode = "Request returned code: %d message: %s"
 )
 const (
-	ACMPCAJSONRequest = `{
+	acmpcaIssueCertificateRequest = `{
 		"SigningAlgorithm":"SHA256WITHRSA",
 		"Validity": {"Type": "DAYS","Value": 365},
 		"CertificateAuthorityArn": "%s","Csr": "%s"
 	}`
-	acmpcaListCertificateAuthoritiesRequest = `{"MaxResults": 1}`
+
+	acmRequestCertificateRequest = `{
+   		"CertificateAuthorityArn": "%s",
+   		"DomainName": "%s"
+	}`
+
+	acmpcaListCertificateAuthoritiesRequest = `{"MaxResults": 100}`
 	acmpcaGetCertificateRequest             = `{
-		"CertificateArn": "%s"
-		,"CertificateAuthorityArn": "%s"
+		"CertificateArn": "%s",
+		"CertificateAuthorityArn": "%s"
 	}`
 )
 
@@ -45,7 +51,7 @@ func TestACMPCACertificate(t *testing.T) {
 	acmpcaArn := getACMPCAArn(t)
 
 	cn := randSeq(9) + ".example.com"
-	jsonBody := fmt.Sprintf(ACMPCAJSONRequest, acmpcaArn,
+	jsonBody := fmt.Sprintf(acmpcaIssueCertificateRequest, acmpcaArn,
 		base64.StdEncoding.EncodeToString(createCSR(cn)))
 
 	headers := map[string]string{"X-Amz-Target": acmpcaIssueCertificate}
@@ -76,6 +82,82 @@ func TestACMPCACertificate(t *testing.T) {
 		CertificateAuthorityArn: &acmpcaArn,
 	}
 
+	err = acmpcaCli.WaitUntilCertificateIssued(ctx, getReq)
+	if err != nil {
+		t.Fatalf("Error while waiting for certificate: %s\n", err)
+	}
+
+	requestCertResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
+		Body:    jsonBody,
+		Headers: headers,
+	})
+	if err != nil {
+		t.Fatalf("Cant get certificate: %s", err)
+	}
+
+	if requestCertResp.StatusCode != 200 {
+		t.Fatalf(wrongResponseCode, requestCertResp.StatusCode, requestCertResp.Body)
+	}
+
+	certResponse := new(ACMPCAGetCertificateResponse)
+	err = json.Unmarshal([]byte(requestCertResp.Body), certResponse)
+
+	if err != nil {
+		t.Fatalf("Cant process response json: %s", err)
+	}
+
+	if len(certResponse.Certificate) < 1 {
+		t.Fatalf("Certificate field in json is empty.")
+	}
+	rawCert := certResponse.Certificate
+
+	checkCertificate(t, rawCert, cn)
+
+}
+
+func TestACMCertificate(t *testing.T) {
+	ctx := context.TODO()
+
+	awsCfg, err := external.LoadDefaultAWSConfig()
+	if err != nil {
+		t.Fatalf("Can't get AWS configuration: %s", err)
+	}
+
+	cn := randSeq(9) + ".example.com"
+	acmpcaArn := getACMPCAArn(t)
+
+	jsonBody := fmt.Sprintf(acmRequestCertificateRequest, acmpcaArn, cn)
+	base64.StdEncoding.EncodeToString(createCSR(cn))
+
+	headers := map[string]string{"X-Amz-Target": acmRequestCertificate}
+
+	issueCertResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
+		Body:    jsonBody,
+		Headers: headers,
+	})
+	if err != nil {
+		t.Fatalf("Request returned error: %s", err)
+	}
+
+	if issueCertResp.StatusCode != 200 {
+		t.Fatalf(wrongResponseCode, issueCertResp.StatusCode, issueCertResp.Body)
+	}
+
+	issueResponse := new(ACMPCAIssueCertificateResponse)
+	err = json.Unmarshal([]byte(issueCertResp.Body), issueResponse)
+	if err != nil {
+		t.Fatalf("Cant process response json: %s", err)
+	}
+
+	headers = map[string]string{"X-Amz-Target": acmpcaGetCertificate}
+	jsonBody = fmt.Sprintf(acmpcaGetCertificateRequest, issueResponse.CertificateArn, acmpcaArn)
+
+	getReq := &acmpca.GetCertificateInput{
+		CertificateArn:          &issueResponse.CertificateArn,
+		CertificateAuthorityArn: &acmpcaArn,
+	}
+
+	acmpcaCli := acmpca.New(awsCfg)
 	err = acmpcaCli.WaitUntilCertificateIssued(ctx, getReq)
 	if err != nil {
 		t.Fatalf("Error while waiting for certificate: %s\n", err)
@@ -173,7 +255,7 @@ func createCSR(cn string) []byte {
 		},
 		//EmailAddresses: []string{"some@adress"},
 	}
-	keyBytes, _ := rsa.GenerateKey(rand.Reader, 1024)
+	keyBytes, _ := rsa.GenerateKey(rand.Reader, 4096)
 	csrBytes, _ := x509.CreateCertificateRequest(rand.Reader, &csr, keyBytes)
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csrBytes})
 }
@@ -195,9 +277,16 @@ func getACMPCAArn(t *testing.T) string {
 	if err != nil {
 		t.Fatalf("Request returned error: %s", err)
 	}
+	var arn string
 	listArn := &acmpca.ListCertificateAuthoritiesResponse{}
 	err = json.Unmarshal([]byte(arnListReq.Body), listArn)
-	arn := *listArn.CertificateAuthorities[0].Arn
+	for _, ca := range listArn.CertificateAuthorities {
+		if ca.Status == "ACTIVE" {
+			arn = *listArn.CertificateAuthorities[0].Arn
+			break
+		}
+	}
+	//arn := *listArn.CertificateAuthorities[0].Arn
 	if len(arn) < 1 {
 		t.Fatalf("ACMPCA is empty")
 	}
