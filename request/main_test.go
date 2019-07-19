@@ -282,7 +282,7 @@ func getACMPCAArn(t *testing.T) string {
 	err = json.Unmarshal([]byte(arnListReq.Body), listArn)
 	for _, ca := range listArn.CertificateAuthorities {
 		if ca.Status == "ACTIVE" {
-			arn = *listArn.CertificateAuthorities[0].Arn
+			arn = *ca.Arn
 			break
 		}
 	}
