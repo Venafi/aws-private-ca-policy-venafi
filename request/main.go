@@ -145,7 +145,6 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 	var req certificate.Request
 	req.Subject = pkix.Name{CommonName: *certRequest.DomainName}
 	req.DNSNames = certRequest.SubjectAlternativeNames
-	req.CsrOrigin = certificate.ServiceGeneratedCSR
 
 	if certRequest.VenafiZone == "" {
 		certRequest.VenafiZone = defaultZone
@@ -154,7 +153,7 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 	if err != nil {
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed get policy from database: %s", err))
 	}
-	err = policy.ValidateCertificateRequest(&req)
+	err = policy.SimpleValidateCertificateRequest(req)
 	if err != nil {
 		return clientError(http.StatusForbidden, err.Error())
 	}

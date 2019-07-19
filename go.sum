@@ -2,6 +2,8 @@ github.com/Venafi/vcert v0.0.0-20190710142916-c27071681c95 h1:WZfVCU+AMQMZDOJK05
 github.com/Venafi/vcert v0.0.0-20190710142916-c27071681c95/go.mod h1:3sXw16DKVded/kLVDma2veqEUQC7O37h98ims7cIvN4=
 github.com/Venafi/vcert v0.0.0-20190716063946-19debda4b3b5 h1:2rIKA4rQN4lu8dc41XzE4CVTzUabd+oqkUJmZTvqfa0=
 github.com/Venafi/vcert v0.0.0-20190716063946-19debda4b3b5/go.mod h1:3sXw16DKVded/kLVDma2veqEUQC7O37h98ims7cIvN4=
+github.com/Venafi/vcert v0.0.0-20190719150501-6257e67aa3f9 h1:5cGaH7szhyxaYPGjBjiB6bUneU8wtX8XCtA5xQNF0ME=
+github.com/Venafi/vcert v0.0.0-20190719150501-6257e67aa3f9/go.mod h1:3sXw16DKVded/kLVDma2veqEUQC7O37h98ims7cIvN4=
 github.com/aws/aws-lambda-go v1.11.1 h1:wuOnhS5aqzPOWns71FO35PtbtBKHr4MYsPVt5qXLSfI=
 github.com/aws/aws-lambda-go v1.11.1/go.mod h1:Rr2SMTLeSMKgD45uep9V/NP8tnbCcySgu04cx0k/6cw=
 github.com/aws/aws-sdk-go v1.20.15 h1:y9ts8MJhB7ReUidS6Rq+0KxdFeL01J+pmOlGq6YqpiQ=
