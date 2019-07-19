@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/x509/pkix"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/Venafi/aws-private-ca-policy-venafi/common"
 	"github.com/Venafi/vcert/pkg/certificate"
@@ -16,14 +15,19 @@ import (
 	"net/http"
 )
 
-var (
-	// ErrNameNotProvided is thrown when a name is not provided
-	ErrNameNotProvided = errors.New("no name was provided in the HTTP body")
-)
+type venafiError string
+
+func (e venafiError) Error() string {
+	return string(e)
+}
 
 const (
 	acmRequestCertificate  = "CertificateManager.RequestCertificate"
 	acmpcaIssueCertificate = "ACMPrivateCA.IssueCertificate"
+	defaultZone            = "Default"
+
+	// ErrNameNotProvided is thrown when a name is not provided
+	ErrNameNotProvided venafiError = "no name was provided in the HTTP body"
 )
 
 type ACMPCAIssueCertificateRequest struct {
@@ -100,12 +104,12 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 	}
 
 	if certRequest.VenafiZone == "" {
-		certRequest.VenafiZone = "Default"
+		certRequest.VenafiZone = defaultZone
 	}
 
 	policy, err := common.GetPolicy(certRequest.VenafiZone)
 	if err != nil {
-		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed get policy from database: %s", err))
+		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed to get policy from database: %s", err))
 	}
 	err = policy.ValidateCertificateRequest(&req)
 	if err != nil {
@@ -122,7 +126,7 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 
 	csrResp, err := caReqInput.Send(ctx)
 	if err != nil {
-		return clientError(http.StatusInternalServerError, fmt.Sprintf("could not get certificate response: %s", err))
+		return clientError(http.StatusInternalServerError, fmt.Sprintf("Could not get certificate response: %s", err))
 	}
 
 	respoBodyJSON, err := json.Marshal(csrResp)
@@ -148,16 +152,15 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 	var req certificate.Request
 	req.Subject = pkix.Name{CommonName: *certRequest.DomainName}
 	req.DNSNames = certRequest.SubjectAlternativeNames
-	req.CsrOrigin = certificate.ServiceGeneratedCSR
 
 	if certRequest.VenafiZone == "" {
-		certRequest.VenafiZone = "Default"
+		certRequest.VenafiZone = defaultZone
 	}
 	policy, err := common.GetPolicy(certRequest.VenafiZone)
 	if err != nil {
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed get policy from database: %s", err))
 	}
-	err = policy.ValidateCertificateRequest(&req)
+	err = policy.SimpleValidateCertificateRequest(req)
 	if err != nil {
 		return clientError(http.StatusForbidden, err.Error())
 	}
@@ -171,7 +174,7 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 
 	certResp, err := caReqInput.Send(ctx)
 	if err != nil {
-		return clientError(http.StatusInternalServerError, fmt.Sprintf("could not get certificate response: %s", err))
+		return clientError(http.StatusInternalServerError, fmt.Sprintf("Could not get certificate response: %s", err))
 	}
 
 	respoBodyJSON, err := json.Marshal(certResp)
@@ -187,9 +190,16 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 
 //TODO: Include custom error message into body
 func clientError(status int, body string) (events.APIGatewayProxyResponse, error) {
+	temp := struct {
+		Msg string `json:"msg"`
+	}{
+		body,
+	}
+	b, _ := json.Marshal(temp)
+
 	return events.APIGatewayProxyResponse{
 		StatusCode: status,
-		Body:       fmt.Sprintf(`{ "msg" : "%s" }`, body),
+		Body:       string(b),
 	}, nil
 }
 
