@@ -105,6 +105,9 @@ acmpca_create:
 	--certificate-authority-type "ROOT"|jq -r .CertificateAuthorityArn > CertificateAuthorityArn.txt
 
 acmpca_import:
+	aws acm-pca get-certificate-authority-csr --certificate-authority-arn $$(cat CertificateAuthorityArn.txt)|jq .Csr|xargs echo -e > fixtures/rootCA.csr
+	openssl genrsa -out fixtures/rootCA.key  2048
+	openssl x509 -req -days 365 -in fixtures/rootCA.csr -signkey fixtures/rootCA.key -extfile fixtures/v3.ext -sha256 -out fixtures/rootCA.crt
 	aws acm-pca import-certificate-authority-certificate --certificate-authority-arn $$(cat CertificateAuthorityArn.txt) --certificate file://fixtures/rootCA.crt
 
 acmpca_delete:
