@@ -67,8 +67,7 @@ func getConnection(tppUrl, tppUser, tppPassword, cloudUrl, cloudKey, trustBundle
 			Credentials:   &endpoint.Authentication{User: tppUser, Password: tppPassword},
 		}
 		if trustBundle != "" {
-			var buf []byte
-			_, err := base64.StdEncoding.Decode(buf, []byte(trustBundle))
+			buf, err := base64.StdEncoding.DecodeString(trustBundle)
 			if err != nil {
 				log.Printf("Can`t read trust bundle from file %s: %v\n", trustBundle, err)
 				return nil, err

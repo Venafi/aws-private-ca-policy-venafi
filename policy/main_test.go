@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/base64"
 	"github.com/Venafi/aws-private-ca-policy-venafi/common"
 	"github.com/Venafi/vcert/pkg/endpoint"
+	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -10,12 +12,31 @@ import (
 func TestHandleRequestCloud(t *testing.T) {
 	var err error
 	vcertConnector, err = getConnection("", "", "", os.Getenv("CLOUDURL"), os.Getenv("CLOUDAPIKEY"), "")
-	zoneName := "Default"
-	unexistedZone := "Unexisted zone olololololo"
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = cleanDB()
+	testHandleRequest(t, os.Getenv("CLOUDZONE"), "UnexistedZoneOlololololo")
+}
+
+func TestHandleRequestTPP(t *testing.T) {
+	f, err := os.Open(os.Getenv("TRUST_BUNDLE"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	trust_bundle, err := ioutil.ReadAll(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	vcertConnector, err = getConnection(os.Getenv("TPPURL"), os.Getenv("TPPUSER"), os.Getenv("TPPPASSWORD"), "", "", base64.StdEncoding.EncodeToString(trust_bundle))
+	if err != nil {
+		t.Fatal(err)
+	}
+	testHandleRequest(t, os.Getenv("TPPZONE"), "UnexistedZone\\Olololololo")
+}
+
+func testHandleRequest(t *testing.T, zoneName, unexistedZone string) {
+	err := cleanDB()
 	if err != nil {
 		t.Fatal(err)
 	}
