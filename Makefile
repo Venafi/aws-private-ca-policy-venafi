@@ -102,21 +102,31 @@ sam_invoke_policy:
 
 acmpca_create:
 	aws acm-pca create-certificate-authority --certificate-authority-configuration file://fixtures/acmpca-test-config.json \
-	--certificate-authority-type "ROOT"|jq -r .CertificateAuthorityArn > caarn.txt
+	--certificate-authority-type "SUBORDINATE"|jq -r .CertificateAuthorityArn > caarn.txt
 	aws acm-pca wait certificate-authority-csr-created --certificate-authority-arn $$(cat caarn.txt)	
 
-acmpca_import:
-	aws acm-pca get-certificate-authority-csr --certificate-authority-arn $$(cat caarn.txt)|jq .Csr|xargs echo -e > fixtures/rootCA.csr
-	openssl genrsa -out fixtures/rootCA.key  2048
-	openssl req -x509 -new -nodes -key fixtures/rootCA.key \
-    -sha256 -days 3650 -out fixtures/rootCA.key \
-    -subj "/CN=ExampleInternalCA-Root"
-	openssl x509 -req -days 365 -in fixtures/rootCA.csr -signkey fixtures/rootCA.key -extfile fixtures/v3.ext -sha256 -out fixtures/rootCA.crt
-	aws acm-pca import-certificate-authority-certificate --certificate-authority-arn $$(cat caarn.txt) --certificate file://fixtures/rootCA.crt
+create_internal_ca:
+	openssl genrsa -out fixtures/InternalCA-Root.key 2048
+	openssl req -x509 -new -nodes -key fixtures/InternalCA-Root.key \
+    -sha256 -days 3650 -out fixtures/InternalCA-Root.crt \
+    -subj "/CN=VenafiInternalCA-Root"
 
-acmpca_delete:
+acmpca_import_ca:
+	aws acm-pca get-certificate-authority-csr --certificate-authority-arn $$(cat caarn.txt)|jq .Csr|xargs echo -e > fixtures/ACMPCA-CA.csr
+	openssl x509 -req -days 365 -in fixtures/ACMPCA-CA.csr \
+	-CA fixtures/InternalCA-Root.crt \
+	-CAcreateserial \
+	-CAkey fixtures/InternalCA-Root.key \
+	-extfile fixtures/openssl-ca-extensions.ext \
+	-sha256 -out fixtures/ACMPCA-CA.crt
+	aws acm-pca import-certificate-authority-certificate --certificate-authority-arn $$(cat caarn.txt) \
+	--certificate file://fixtures/ACMPCA-CA.crt --certificate-chain file://fixtures/InternalCA-Root.crt
+
+create_acmpca: acmpca_create create_internal_ca acmpca_import_ca
+
+delete_acmpca:
+	aws acm-pca update-certificate-authority --certificate-authority-arn $$(cat caarn.txt) --status DISABLED
 	aws acm-pca delete-certificate-authority --certificate-authority-arn $$(cat caarn.txt) --permanent-deletion-time-in-days 7
 
 acmpca_list:
 	@aws acm-pca list-certificate-authorities
-
