@@ -1,5 +1,6 @@
 .idea
 credentials
+caarn.txt
 credentials.json
 dist
 example-sam-app
