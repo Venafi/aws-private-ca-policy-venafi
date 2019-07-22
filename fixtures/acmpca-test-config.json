@@ -1,0 +1,11 @@
+{
+  "KeyAlgorithm": "RSA_2048",
+  "SigningAlgorithm": "SHA256WITHRSA",
+  "Subject": {
+    "Country": "US",
+    "Organization": "Venafi Inc.",
+    "OrganizationalUnit": "API Integrations",
+    "State": "Utah",
+    "CommonName": "API Integrations test CA"
+  }
+}

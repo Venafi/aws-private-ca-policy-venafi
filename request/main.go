@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"crypto/x509/pkix"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/Venafi/aws-private-ca-policy-venafi/common"
@@ -55,9 +54,6 @@ type ACMPCAGetCertificateResponse struct {
 // However you could use other event sources (S3, Kinesis etc), or JSON-decoded primitive types such as 'string'.
 func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 
-	//TODO: RequestCertificate*|https://docs.aws.amazon.com/acm/latest/APIReference/API_RequestCertificate.html
-	//TODO: [*IssueCertificate*|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_IssueCertificate.html]
-
 	ctx := context.TODO()
 
 	switch request.Headers["X-Amz-Target"] {
@@ -65,10 +61,25 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 		return venafiACMPCAIssueCertificateRequest(request)
 	case acmRequestCertificate:
 		return venafiACMRequestCertificate(request)
-	case acmpcaListCertificateAuthorities:
-		return passThru(request, ctx, acmpcaListCertificateAuthorities)
+	case acmDescribeCertificate:
+		return passThru(request, ctx, acmDescribeCertificate)
+	case acmExportCertificate:
+		return passThru(request, ctx, acmExportCertificate)
+	case acmGetCertificate:
+		return passThru(request, ctx, acmGetCertificate)
+	case acmListCertificates:
+		return passThru(request, ctx, acmListCertificates)
+	case acmRenewCertificate:
+		return passThru(request, ctx, acmRenewCertificate)
 	case acmpcaGetCertificate:
 		return passThru(request, ctx, acmpcaGetCertificate)
+	case acmpcaGetCertificateAuthorityCertificate:
+		return passThru(request, ctx, acmpcaGetCertificateAuthorityCertificate)
+	case acmpcaListCertificateAuthorities:
+		return passThru(request, ctx, acmpcaListCertificateAuthorities)
+	case acmpcaRevokeCertificate:
+		return passThru(request, ctx, acmpcaRevokeCertificate)
+
 	default:
 		return clientError(http.StatusMethodNotAllowed, "Can't determine requested method")
 	}
@@ -86,12 +97,8 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 		return clientError(http.StatusUnprocessableEntity, fmt.Sprintf(errUnmarshalJson, acmpcaIssueCertificate, err))
 	}
 
-	csr, err := base64.StdEncoding.DecodeString(string(certRequest.Csr))
-	if err != nil {
-		return clientError(http.StatusUnprocessableEntity, "Can`t decode csr from base64")
-	}
 	var req certificate.Request
-	err = req.SetCSR([]byte(csr))
+	err = req.SetCSR([]byte(certRequest.IssueCertificateInput.Csr))
 	if err != nil {
 		return clientError(http.StatusUnprocessableEntity, "Can't parse certificate request")
 	}

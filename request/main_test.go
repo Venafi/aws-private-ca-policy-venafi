@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -10,25 +11,52 @@ import (
 	"encoding/pem"
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-sdk-go-v2/aws/external"
+	"github.com/aws/aws-sdk-go-v2/service/acmpca"
 	mrand "math/rand"
-	"os"
-	"strings"
 	"testing"
 	"time"
 )
 
 const (
-	ACMPCAJSONRequest = `{"SigningAlgorithm":"SHA256WITHRSA","Validity": {"Type": "DAYS","Value": 365},"CertificateAuthorityArn": "%s","Csr": "%s"}`
+	wrongResponseCode = "Request returned code: %d message: %s"
+)
+const (
+	acmpcaIssueCertificateRequest = `{
+		"SigningAlgorithm":"SHA256WITHRSA",
+		"Validity": {"Type": "DAYS","Value": 365},
+		"CertificateAuthorityArn": "%s","Csr": "%s"
+	}`
+
+	acmRequestCertificateRequest = `{
+   		"CertificateAuthorityArn": "%s",
+   		"DomainName": "%s"
+	}`
+
+	acmpcaListCertificateAuthoritiesRequest = `{"MaxResults": 100}`
+	acmpcaGetCertificateRequest             = `{
+		"CertificateArn": "%s",
+		"CertificateAuthorityArn": "%s"
+	}`
 )
 
-func TestACMPCAHandler(t *testing.T) {
+func TestACMPCACertificate(t *testing.T) {
+	ctx := context.TODO()
+
+	awsCfg, err := external.LoadDefaultAWSConfig()
+	if err != nil {
+		t.Fatalf("Can't get AWS configuration: %s", err)
+	}
+	acmpcaCli := acmpca.New(awsCfg)
+	acmpcaArn := getACMPCAArn(t)
+
 	cn := randSeq(9) + ".example.com"
-	jsonBody := strings.TrimSuffix(fmt.Sprintf(ACMPCAJSONRequest, os.Getenv("ACM_ARN"),
-		base64.StdEncoding.EncodeToString(createCSR(cn))), "\n")
+	jsonBody := fmt.Sprintf(acmpcaIssueCertificateRequest, acmpcaArn,
+		base64.StdEncoding.EncodeToString(createCSR(cn)))
 
-	headers := map[string]string{"X-Amz-Target": "ACMPrivateCA.IssueCertificate"}
+	headers := map[string]string{"X-Amz-Target": acmpcaIssueCertificate}
 
-	certResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
+	issueCertResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
 		Body:    jsonBody,
 		Headers: headers,
 	})
@@ -36,10 +64,130 @@ func TestACMPCAHandler(t *testing.T) {
 		t.Fatalf("Request returned error: %s", err)
 	}
 
-	if certResp.StatusCode != 200 {
-		t.Fatalf("Request returned code: %d message: %s", certResp.StatusCode, certResp.Body)
+	if issueCertResp.StatusCode != 200 {
+		t.Fatalf(wrongResponseCode, issueCertResp.StatusCode, issueCertResp.Body)
 	}
-	checkCertificate(t, certResp.Body, cn)
+
+	issueResponse := new(ACMPCAIssueCertificateResponse)
+	err = json.Unmarshal([]byte(issueCertResp.Body), issueResponse)
+	if err != nil {
+		t.Fatalf("Cant process response json: %s", err)
+	}
+
+	headers = map[string]string{"X-Amz-Target": acmpcaGetCertificate}
+	jsonBody = fmt.Sprintf(acmpcaGetCertificateRequest, issueResponse.CertificateArn, acmpcaArn)
+
+	getReq := &acmpca.GetCertificateInput{
+		CertificateArn:          &issueResponse.CertificateArn,
+		CertificateAuthorityArn: &acmpcaArn,
+	}
+
+	err = acmpcaCli.WaitUntilCertificateIssued(ctx, getReq)
+	if err != nil {
+		t.Fatalf("Error while waiting for certificate: %s\n", err)
+	}
+
+	requestCertResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
+		Body:    jsonBody,
+		Headers: headers,
+	})
+	if err != nil {
+		t.Fatalf("Cant get certificate: %s", err)
+	}
+
+	if requestCertResp.StatusCode != 200 {
+		t.Fatalf(wrongResponseCode, requestCertResp.StatusCode, requestCertResp.Body)
+	}
+
+	certResponse := new(ACMPCAGetCertificateResponse)
+	err = json.Unmarshal([]byte(requestCertResp.Body), certResponse)
+
+	if err != nil {
+		t.Fatalf("Cant process response json: %s", err)
+	}
+
+	if len(certResponse.Certificate) < 1 {
+		t.Fatalf("Certificate field in json is empty.")
+	}
+	rawCert := certResponse.Certificate
+
+	checkCertificate(t, rawCert, cn)
+
+}
+
+func TestACMCertificate(t *testing.T) {
+	ctx := context.TODO()
+
+	awsCfg, err := external.LoadDefaultAWSConfig()
+	if err != nil {
+		t.Fatalf("Can't get AWS configuration: %s", err)
+	}
+
+	cn := randSeq(9) + ".example.com"
+	acmpcaArn := getACMPCAArn(t)
+
+	jsonBody := fmt.Sprintf(acmRequestCertificateRequest, acmpcaArn, cn)
+	base64.StdEncoding.EncodeToString(createCSR(cn))
+
+	headers := map[string]string{"X-Amz-Target": acmRequestCertificate}
+
+	issueCertResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
+		Body:    jsonBody,
+		Headers: headers,
+	})
+	if err != nil {
+		t.Fatalf("Request returned error: %s", err)
+	}
+
+	if issueCertResp.StatusCode != 200 {
+		t.Fatalf(wrongResponseCode, issueCertResp.StatusCode, issueCertResp.Body)
+	}
+
+	issueResponse := new(ACMPCAIssueCertificateResponse)
+	err = json.Unmarshal([]byte(issueCertResp.Body), issueResponse)
+	if err != nil {
+		t.Fatalf("Cant process response json: %s", err)
+	}
+
+	headers = map[string]string{"X-Amz-Target": acmpcaGetCertificate}
+	jsonBody = fmt.Sprintf(acmpcaGetCertificateRequest, issueResponse.CertificateArn, acmpcaArn)
+
+	getReq := &acmpca.GetCertificateInput{
+		CertificateArn:          &issueResponse.CertificateArn,
+		CertificateAuthorityArn: &acmpcaArn,
+	}
+
+	acmpcaCli := acmpca.New(awsCfg)
+	err = acmpcaCli.WaitUntilCertificateIssued(ctx, getReq)
+	if err != nil {
+		t.Fatalf("Error while waiting for certificate: %s\n", err)
+	}
+
+	requestCertResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
+		Body:    jsonBody,
+		Headers: headers,
+	})
+	if err != nil {
+		t.Fatalf("Cant get certificate: %s", err)
+	}
+
+	if requestCertResp.StatusCode != 200 {
+		t.Fatalf(wrongResponseCode, requestCertResp.StatusCode, requestCertResp.Body)
+	}
+
+	certResponse := new(ACMPCAGetCertificateResponse)
+	err = json.Unmarshal([]byte(requestCertResp.Body), certResponse)
+
+	if err != nil {
+		t.Fatalf("Cant process response json: %s", err)
+	}
+
+	if len(certResponse.Certificate) < 1 {
+		t.Fatalf("Certificate field in json is empty.")
+	}
+	rawCert := certResponse.Certificate
+
+	checkCertificate(t, rawCert, cn)
 
 }
 
@@ -57,11 +205,8 @@ func TestPassThru(t *testing.T) {
 	//TODO: [RevokeCertificate|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_RevokeCertificate.html] (pass-thru)
 	var headers map[string]string
 	targets := map[string]string{
-		acmpcaListCertificateAuthorities: `{"MaxResults": 10}`,
-		acmpcaGetCertificate: `{
-		  "CertificateArn": "arn:aws:acm-pca:region:account:certificate-authority/12345678-1234-1234-1234-123456789012/certificate/e8cbd2bedb122329f97706bcfec990f8",
-		  "CertificateAuthorityArn": "arn:aws:acm-pca:region:account:certificate-authority/12345678-1234-1234-1234-123456789012"
-		}`,
+		acmpcaListCertificateAuthorities: acmpcaListCertificateAuthoritiesRequest,
+		acmpcaGetCertificate:             acmpcaGetCertificateRequest,
 	}
 
 	for target, body := range targets {
@@ -74,22 +219,18 @@ func TestPassThru(t *testing.T) {
 			t.Fatalf("Request returned error: %s", err)
 		}
 
-		if certResp.StatusCode != 200 {
-			t.Fatalf("Request returned code: %d message: %s", certResp.StatusCode, certResp.Body)
-		}
+		//if certResp.StatusCode != 200 {
+		//	t.Fatalf(wrongResponseCode, certResp.StatusCode, certResp.Body)
+		//}
 		t.Logf("Resp is:\n %s", certResp.Body)
 	}
 
 }
 
-func checkCertificate(t *testing.T, body string, cn string) {
+func checkCertificate(t *testing.T, rawCert string, cn string) {
+
 	var err error
-	certResponse := new(ACMPCAGetCertificateResponse)
-	err = json.Unmarshal([]byte(body), certResponse)
-	if err != nil {
-		t.Fatalf("Cant process response json: %s", err)
-	}
-	rawCert := certResponse.Certificate
+
 	pemBlock, _ := pem.Decode([]byte(rawCert))
 	if pemBlock.Bytes == nil {
 		t.Fatalf("Certificate PEM is nil")
@@ -101,7 +242,7 @@ func checkCertificate(t *testing.T, body string, cn string) {
 	if cert.Subject.CommonName != cn {
 		t.Fatalf("Common name is not as expected")
 	}
-	t.Logf("Certificate is ok:\n %s", certResponse.Certificate)
+	t.Logf("Certificate is ok:\n %s", rawCert)
 }
 
 func createCSR(cn string) []byte {
@@ -114,7 +255,7 @@ func createCSR(cn string) []byte {
 		},
 		//EmailAddresses: []string{"some@adress"},
 	}
-	keyBytes, _ := rsa.GenerateKey(rand.Reader, 1024)
+	keyBytes, _ := rsa.GenerateKey(rand.Reader, 4096)
 	csrBytes, _ := x509.CreateCertificateRequest(rand.Reader, &csr, keyBytes)
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csrBytes})
 }
@@ -127,4 +268,27 @@ func randSeq(n int) string {
 		b[i] = letters[mrand.Intn(len(letters))]
 	}
 	return string(b)
+}
+func getACMPCAArn(t *testing.T) string {
+	arnListReq, err := ACMPCAHandler(events.APIGatewayProxyRequest{
+		Body:    acmpcaListCertificateAuthoritiesRequest,
+		Headers: map[string]string{"X-Amz-Target": acmpcaListCertificateAuthorities},
+	})
+	if err != nil {
+		t.Fatalf("Request returned error: %s", err)
+	}
+	var arn string
+	listArn := &acmpca.ListCertificateAuthoritiesResponse{}
+	err = json.Unmarshal([]byte(arnListReq.Body), listArn)
+	for _, ca := range listArn.CertificateAuthorities {
+		if ca.Status == "ACTIVE" {
+			arn = *ca.Arn
+			break
+		}
+	}
+	//arn := *listArn.CertificateAuthorities[0].Arn
+	if len(arn) < 1 {
+		t.Fatalf("ACMPCA is empty")
+	}
+	return arn
 }
