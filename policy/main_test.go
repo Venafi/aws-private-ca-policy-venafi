@@ -15,7 +15,7 @@ func TestHandleRequestCloud(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	testHandleRequest(t, os.Getenv("CLOUDZONE"), "UnexistedZoneOlololololo")
+	testHandleRequest(t, os.Getenv("CLOUDZONE"), "UnexistedZoneOlololololo", "^.*.example.com$")
 }
 
 func TestHandleRequestTPP(t *testing.T) {
@@ -32,10 +32,10 @@ func TestHandleRequestTPP(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	testHandleRequest(t, os.Getenv("TPPZONE"), "UnexistedZone\\Olololololo")
+	testHandleRequest(t, os.Getenv("TPPZONE"), "UnexistedZone\\Olololololo", `^[\p{L}\p{N}-_*]+\.example\.com$`)
 }
 
-func testHandleRequest(t *testing.T, zoneName, unexistedZone string) {
+func testHandleRequest(t *testing.T, zoneName, unexistedZone, checkRegexp string) {
 	err := cleanDB()
 	if err != nil {
 		t.Fatal(err)
@@ -56,7 +56,7 @@ func testHandleRequest(t *testing.T, zoneName, unexistedZone string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.SubjectCNRegexes[0] != "^.*.example.com$" {
+	if p.SubjectCNRegexes[0] != checkRegexp {
 		t.Fatalf("bad policy")
 	}
 	_, err = common.GetPolicy(unexistedZone)
