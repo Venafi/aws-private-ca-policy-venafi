@@ -87,6 +87,10 @@ sam_delete:
 	aws cloudformation delete-stack --stack-name $(STACK_NAME)
 	aws cloudformation wait stack-delete-complete --stack-name $(STACK_NAME)
 
+sam_update: sam_package
+	aws cloudformation update-stack --stack-name $(STACK_NAME) --template-body file://packaged.yaml --capabilities CAPABILITY_AUTO_EXPAND
+	aws cloudformation wait stack-update-complete --stack-name $(STACK_NAME)
+
 get_proxy:
 	aws cloudformation --region $(REGION) describe-stacks --stack-name $(STACK_NAME) --query "Stacks[0].Outputs[0].OutputValue"
 

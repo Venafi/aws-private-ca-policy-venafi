@@ -79,6 +79,11 @@ Additionally you can add VenafiZone field:
         op=replace,path=/policy,value=$(jq -c -a @text resource-policy.json)
     ``` 
     
+1. Create policy item which will be synced:
+    ```bash
+    aws dynamodb put-item --table-name cert-policy --item '{"PolicyID": {"S":"Default"}}'
+    ```
+    
 ### Usage
 
 
