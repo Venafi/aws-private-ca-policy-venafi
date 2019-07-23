@@ -132,6 +132,9 @@ delete_acmpca:
 acmpca_list:
 	@aws acm-pca list-certificate-authorities
 
+acmpca_status:
+	aws acm-pca list-certificate-authorities | jq .CertificateAuthorities[].Status
+
 acmpca_list_active_ca:
 	aws acm-pca list-certificate-authorities|jq -c --arg Status "ACTIVE" '.CertificateAuthorities[] | select(.Status == $$Status)'|jq .
 

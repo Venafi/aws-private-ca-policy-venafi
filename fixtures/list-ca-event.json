@@ -1,0 +1,5 @@
+{
+  "body": "{\"MaxResults\": 10}",
+  "httpMethod": "POST",
+  "httpHeader": "X-Amz-Target: ACMPrivateCA.ListCertificateAuthorities"
+}

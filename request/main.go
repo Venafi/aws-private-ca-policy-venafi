@@ -81,7 +81,7 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 		return passThru(request, ctx, acmpcaRevokeCertificate)
 
 	default:
-		return clientError(http.StatusMethodNotAllowed, "Can't determine requested method")
+		return clientError(http.StatusMethodNotAllowed, fmt.Sprintf("Can't determine requested method for header: %s", request.Headers["X-Amz-Target"]))
 	}
 
 }

@@ -78,3 +78,15 @@ Additionally you can add VenafiZone field:
         --patch-operations \
         op=replace,path=/policy,value=$(jq -c -a @text resource-policy.json)
     ``` 
+    
+### Usage
+
+
+To determine request type proper "X-Amz-Target" header must be set.  
+TODO: List of headers here
+     
+#### Pass thru
+Venafi lambda can pass standart requests to ACM and ACMPCA thru it. You should specify endpoint url to API deployed url. For example:
+```bash
+aws acm-pca list-certificate-authorities --endpoint-url http://localhost:3000/request
+``` 
