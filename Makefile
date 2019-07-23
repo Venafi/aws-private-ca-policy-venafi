@@ -17,10 +17,10 @@ ARN ?= $$(aws acm-pca list-certificate-authorities|jq -c --arg Status "ACTIVE" '
 test:
 	go test $(TEST) $(TESTARGS)  -v -cover -timeout=$(TEST_TIMEOUT) -parallel=20
 
-build: build_request build_policy
+sam_local_invoke:
+	for e in `ls fixtures/events/*-event.json`; do sam local invoke CertRequestLambda -e $$e; done
 
-sam_test:
-	for e in `ls fixtures/*-event.json`; do sam local invoke CertRequestLambda -e $$e; done
+build: build_request build_policy
 
 deploy: sam_deploy
 
@@ -67,10 +67,6 @@ update_policy_code:
 	aws lambda update-function-code --function-name $(CERT_POLICY_NAME) \
     --zip-file fileb://dist/$(CERT_POLICY_NAME).zip
 
-#ACM commands
-list_acm_arn:
-	aws acm-pca list-certificate-authorities|jq .CertificateAuthorities[0].Arn
-
 #SAM commands
 sam_package:
 	sam package \
@@ -95,11 +91,10 @@ get_proxy:
 get_logs:
 	sam logs -n $(CERT_REQUEST_LAMBDA_NAME) --stack-name $(STACK_NAME)
 
-sam_invoke_request:
-	sam local invoke "$(CERT_REQUEST_LAMBDA_NAME)" -e event.json
 
-sam_invoke_policy:
-	sam local invoke "CERT_POLICY_LAMBDA_NAME" -e event.json
+#ACM\PCA commands
+list_acm_arn:
+	aws acm-pca list-certificate-authorities|jq .CertificateAuthorities[0].Arn
 
 acmpca_create:
 	aws acm-pca create-certificate-authority --certificate-authority-configuration file://fixtures/acmpca-test-config.json \
