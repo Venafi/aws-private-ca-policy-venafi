@@ -14,6 +14,8 @@ TEST ?= $$(go list ./... | grep -v /vendor/ | grep -v /e2e)
 TEST_TIMEOUT?=6m
 ARN ?= $$(aws acm-pca list-certificate-authorities|jq -c --arg Status "ACTIVE" '.CertificateAuthorities[] | select(.Status == $$Status)'|jq -r .Arn)
 
+SWITCHABLE_CA_ARN := arn:aws:acm-pca:eu-west-1:497086895112:certificate-authority/cadaae4b-26c7-4c57-9ba1-f00d4e20beb2
+
 test:
 	go test $(TEST) $(TESTARGS)  -v -cover -timeout=$(TEST_TIMEOUT) -parallel=20
 
@@ -135,3 +137,11 @@ acmpca_list_active_ca:
 
 acmpca_get_arn:
 	@echo $(ARN)
+
+acmpca_enable:
+	aws acm-pca restore-certificate-authority --certificate-authority-arn $(SWITCHABLE_CA_ARN)
+	aws acm-pca update-certificate-authority --certificate-authority-arn $(SWITCHABLE_CA_ARN) --status ACTIVE
+
+acmpca_disable:
+	aws acm-pca update-certificate-authority --certificate-authority-arn $(SWITCHABLE_CA_ARN) --status DISABLED
+	aws acm-pca delete-certificate-authority --certificate-authority-arn $(SWITCHABLE_CA_ARN) --permanent-deletion-time-in-days 30
