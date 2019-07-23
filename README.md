@@ -45,7 +45,7 @@ Additionally you can add VenafiZone field:
 
 ### AWS Configuration steps (for developers):
 
-1. Create a lambda venafi role named lambda-venafi-role andd attach policies to it:
+1. Create a lambda venafi role named lambda-venafi-role and attach policies to it:
     ```bash
     aws iam create role --role-name lambda-venafi-role
     aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
