@@ -12,6 +12,7 @@ REGION := eu-west-1
 # List of tests to run
 TEST ?= $$(go list ./... | grep -v /vendor/ | grep -v /e2e)
 TEST_TIMEOUT?=6m
+ARN ?= $$(aws acm-pca list-certificate-authorities|jq -c --arg Status "ACTIVE" '.CertificateAuthorities[] | select(.Status == $$Status)'|jq -r .Arn)
 
 test:
 	go test $(TEST) $(TESTARGS)  -v -cover -timeout=$(TEST_TIMEOUT) -parallel=20
@@ -130,3 +131,9 @@ delete_acmpca:
 
 acmpca_list:
 	@aws acm-pca list-certificate-authorities
+
+acmpca_list_active_ca:
+	aws acm-pca list-certificate-authorities|jq -c --arg Status "ACTIVE" '.CertificateAuthorities[] | select(.Status == $$Status)'|jq .
+
+acmpca_get_arn:
+	@echo $(ARN)
