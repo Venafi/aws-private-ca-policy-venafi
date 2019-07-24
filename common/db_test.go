@@ -73,7 +73,7 @@ func TestDeletePolicy(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = GetPolicy(policyName)
-	if err == nil {
+	if err != PolicyNotFound {
 		t.Fatal("Policy should be not found")
 	}
 }
@@ -85,4 +85,16 @@ func strInSlice(s string, sl []string) bool {
 		}
 	}
 	return false
+}
+
+func TestGetEmptyPolicy(t *testing.T) {
+	name := fmt.Sprintf("not_existed_%s", randSeq())
+	err := CreateEmptyPolicy(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = GetPolicy(name)
+	if err != PolicyFoundButEmpty {
+		t.Fatal("policy should be empty")
+	}
 }
