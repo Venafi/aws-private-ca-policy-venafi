@@ -1,14 +1,18 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"github.com/Venafi/aws-private-ca-policy-venafi/common"
 	"github.com/Venafi/vcert"
 	"github.com/Venafi/vcert/pkg/endpoint"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go-v2/aws/external"
+	"github.com/aws/aws-sdk-go-v2/service/kms"
 	"log"
 	"os"
+	"strings"
 )
 
 var vcertConnector endpoint.Connector
@@ -41,14 +45,51 @@ func HandleRequest() error {
 	return nil
 }
 
+func kmsDecrypt(encrypted string) (string, error) {
+	cfg, err := external.LoadDefaultAWSConfig()
+	if err != nil {
+		return "", err
+	}
+
+	svc := kms.New(cfg)
+	input := &kms.DecryptInput{
+		CiphertextBlob: []byte(encrypted),
+	}
+
+	req := svc.DecryptRequest(input)
+	result, err := req.Send(context.Background())
+	if err != nil {
+		return "", err
+	}
+	return result.String(), nil
+}
 func main() {
 	var err error
+
+	apiKey := os.Getenv("CLOUDAPIKEY")
+	password := os.Getenv("TPPPASSWORD")
+
+	plainTextCreds := strings.HasPrefix(strings.ToLower(os.Getenv("ENCRYPTED_CREDENTIALS")), "f")
+	if !plainTextCreds {
+		var err error
+		apiKey, err = kmsDecrypt(apiKey)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		password, err = kmsDecrypt(password)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
+
 	vcertConnector, err = getConnection(
 		os.Getenv("TPPURL"),
 		os.Getenv("TPPUSER"),
-		os.Getenv("TPPPASSWORD"),
+		password,
 		os.Getenv("CLOUDURL"),
-		os.Getenv("CLOUDAPIKEY"),
+		apiKey,
 		os.Getenv("TRUST_BUNDLE"),
 	)
 	if err != nil {
