@@ -106,11 +106,14 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 	if certRequest.VenafiZone == "" {
 		certRequest.VenafiZone = defaultZone
 	}
-
 	policy, err := common.GetPolicy(certRequest.VenafiZone)
-	if err != nil {
+	if err == common.PolicyNotFound {
+		common.CreateEmptyPolicy(certRequest.VenafiZone)
+		return clientError(http.StatusFailedDependency, fmt.Sprintf("Policy not exist in database. Policy creation is scheduled in policy lambda"))
+	} else if err != nil {
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed to get policy from database: %s", err))
 	}
+
 	err = policy.ValidateCertificateRequest(&req)
 	if err != nil {
 		return clientError(http.StatusForbidden, err.Error())
@@ -157,8 +160,11 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 		certRequest.VenafiZone = defaultZone
 	}
 	policy, err := common.GetPolicy(certRequest.VenafiZone)
-	if err != nil {
-		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed get policy from database: %s", err))
+	if err == common.PolicyNotFound {
+		common.CreateEmptyPolicy(certRequest.VenafiZone)
+		return clientError(http.StatusFailedDependency, fmt.Sprintf("Policy not exist in database. Policy creation is scheduled in policy lambda"))
+	} else if err != nil {
+		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed to get policy from database: %s", err))
 	}
 	err = policy.SimpleValidateCertificateRequest(req)
 	if err != nil {

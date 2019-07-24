@@ -2,7 +2,6 @@ package common
 
 import (
 	"context"
-	"errors"
 	"github.com/Venafi/vcert/pkg/endpoint"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
@@ -14,6 +13,14 @@ import (
 var tableName string
 
 const primaryKey = "PolicyID"
+
+type venafiError string
+
+func (e venafiError) Error() string {
+	return string(e)
+}
+
+const PolicyNotFound venafiError = "policy not found"
 
 func init() {
 	tableName = os.Getenv("DYNAMODB_ZONES_TABLE")
@@ -45,7 +52,7 @@ func GetPolicy(name string) (p endpoint.Policy, err error) {
 		return
 	}
 	if result.Item == nil {
-		err = errors.New("not found")
+		err = PolicyNotFound
 		return
 	}
 
@@ -55,6 +62,17 @@ func GetPolicy(name string) (p endpoint.Policy, err error) {
 	}
 
 	return
+}
+
+func CreateEmptyPolicy(name string) error {
+	av := make(map[string]dynamodb.AttributeValue)
+	av[primaryKey] = dynamodb.AttributeValue{S: aws.String(name)}
+	input := &dynamodb.PutItemInput{
+		Item:      av,
+		TableName: aws.String(tableName),
+	}
+	_, err := db.PutItemRequest(input).Send(context.Background())
+	return err
 }
 
 func SavePolicy(name string, p endpoint.Policy) error {
@@ -69,10 +87,7 @@ func SavePolicy(name string, p endpoint.Policy) error {
 	}
 
 	_, err = db.PutItemRequest(input).Send(context.Background())
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func GetAllPoliciesNames() (names []string, err error) {
