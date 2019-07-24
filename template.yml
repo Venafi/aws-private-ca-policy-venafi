@@ -113,17 +113,17 @@ Resources:
         ApiGet:
           Type: Api
           Properties:
-            Path: /{policyId}
+            Path: /{PolicyID}
             Method: ANY
   CertPolicyTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
       TableName: cert-policy
       AttributeDefinitions:
-        - AttributeName: itemId
+        - AttributeName: PolicyID
           AttributeType: S
       KeySchema:
-        - AttributeName: itemId
+        - AttributeName: PolicyID
           KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 1
