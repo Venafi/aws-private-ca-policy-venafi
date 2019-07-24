@@ -21,6 +21,7 @@ func (e venafiError) Error() string {
 }
 
 const PolicyNotFound venafiError = "policy not found"
+const PolicyFoundButEmpty venafiError = "policy found but empty"
 
 func init() {
 	tableName = os.Getenv("DYNAMODB_ZONES_TABLE")
@@ -55,7 +56,10 @@ func GetPolicy(name string) (p endpoint.Policy, err error) {
 		err = PolicyNotFound
 		return
 	}
-
+	if len(result.Item) == 1 {
+		err = PolicyFoundButEmpty
+		return
+	}
 	err = dynamodbattribute.UnmarshalMap(result.Item, &p)
 	if err != nil {
 		return
