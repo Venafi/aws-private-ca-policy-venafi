@@ -43,6 +43,7 @@ func HandleRequest() error {
 
 func main() {
 	var err error
+	//TODO: decrypt TPPPASSWORD and CLOUDAPIKEY from KMS
 	vcertConnector, err = getConnection(
 		os.Getenv("TPPURL"),
 		os.Getenv("TPPUSER"),

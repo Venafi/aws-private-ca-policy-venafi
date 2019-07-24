@@ -81,7 +81,7 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 		return passThru(request, ctx, acmpcaRevokeCertificate)
 
 	default:
-		return clientError(http.StatusMethodNotAllowed, "Can't determine requested method")
+		return clientError(http.StatusMethodNotAllowed, fmt.Sprintf("Can't determine requested method for header: %s", request.Headers["X-Amz-Target"]))
 	}
 
 }
@@ -108,7 +108,10 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 	}
 	policy, err := common.GetPolicy(certRequest.VenafiZone)
 	if err == common.PolicyNotFound {
-		common.CreateEmptyPolicy(certRequest.VenafiZone)
+		err = common.CreateEmptyPolicy(certRequest.VenafiZone)
+		if err != nil {
+			return clientError(http.StatusFailedDependency, err.Error())
+		}
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Policy not exist in database. Policy creation is scheduled in policy lambda"))
 	} else if err != nil {
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed to get policy from database: %s", err))

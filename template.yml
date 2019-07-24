@@ -23,6 +23,7 @@ Parameters:
     Default: ""
     Type: String
 Resources:
+  #TODO: add DynamDB items with policy names
   #TODO: add ACM PCA configuration ( or maybe do it in separated template
   CertRequestLambda:
     Type: 'AWS::Serverless::Function'
@@ -112,17 +113,19 @@ Resources:
         ApiGet:
           Type: Api
           Properties:
-            Path: /{policyId}
+            Path: /{PolicyID}
             Method: ANY
+        Cron:
+          Type:
   CertPolicyTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
-      TableName: CertPolicyTable
+      TableName: cert-policy
       AttributeDefinitions:
-        - AttributeName: itemId
+        - AttributeName: PolicyID
           AttributeType: S
       KeySchema:
-        - AttributeName: itemId
+        - AttributeName: PolicyID
           KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 1
