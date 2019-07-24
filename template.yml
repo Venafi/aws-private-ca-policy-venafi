@@ -115,6 +115,8 @@ Resources:
           Properties:
             Path: /{PolicyID}
             Method: ANY
+        Cron:
+          Type:
   CertPolicyTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
