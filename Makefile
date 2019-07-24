@@ -12,14 +12,17 @@ REGION := eu-west-1
 # List of tests to run
 TEST ?= $$(go list ./... | grep -v /vendor/ | grep -v /e2e)
 TEST_TIMEOUT?=6m
+ARN ?= $$(aws acm-pca list-certificate-authorities|jq -c --arg Status "ACTIVE" '.CertificateAuthorities[] | select(.Status == $$Status)'|jq -r .Arn)
+
+SWITCHABLE_CA_ARN := arn:aws:acm-pca:eu-west-1:497086895112:certificate-authority/cadaae4b-26c7-4c57-9ba1-f00d4e20beb2
 
 test:
 	go test $(TEST) $(TESTARGS)  -v -cover -timeout=$(TEST_TIMEOUT) -parallel=20
 
-build: build_request build_policy
+sam_local_invoke:
+	for e in `ls fixtures/events/*-event.json`; do sam local invoke CertRequestLambda -e $$e; done
 
-sam_test:
-	for e in `ls fixtures/*-event.json`; do sam local invoke CertRequestLambda -e $$e; done
+build: build_request build_policy
 
 deploy: sam_deploy
 
@@ -66,10 +69,6 @@ update_policy_code:
 	aws lambda update-function-code --function-name $(CERT_POLICY_NAME) \
     --zip-file fileb://dist/$(CERT_POLICY_NAME).zip
 
-#ACM commands
-list_acm_arn:
-	aws acm-pca list-certificate-authorities|jq .CertificateAuthorities[0].Arn
-
 #SAM commands
 sam_package:
 	sam package \
@@ -88,17 +87,20 @@ sam_delete:
 	aws cloudformation delete-stack --stack-name $(STACK_NAME)
 	aws cloudformation wait stack-delete-complete --stack-name $(STACK_NAME)
 
+sam_update: sam_package
+	aws cloudformation update-stack --stack-name $(STACK_NAME) --template-body file://packaged.yaml --capabilities CAPABILITY_AUTO_EXPAND
+	aws cloudformation wait stack-update-complete --stack-name $(STACK_NAME)
+
 get_proxy:
 	aws cloudformation --region $(REGION) describe-stacks --stack-name $(STACK_NAME) --query "Stacks[0].Outputs[0].OutputValue"
 
 get_logs:
 	sam logs -n $(CERT_REQUEST_LAMBDA_NAME) --stack-name $(STACK_NAME)
 
-sam_invoke_request:
-	sam local invoke "$(CERT_REQUEST_LAMBDA_NAME)" -e event.json
 
-sam_invoke_policy:
-	sam local invoke "CERT_POLICY_LAMBDA_NAME" -e event.json
+#ACM\PCA commands
+list_acm_arn:
+	aws acm-pca list-certificate-authorities|jq .CertificateAuthorities[0].Arn
 
 acmpca_create:
 	aws acm-pca create-certificate-authority --certificate-authority-configuration file://fixtures/acmpca-test-config.json \
@@ -130,3 +132,20 @@ delete_acmpca:
 
 acmpca_list:
 	@aws acm-pca list-certificate-authorities
+
+acmpca_status:
+	aws acm-pca list-certificate-authorities | jq .CertificateAuthorities[].Status
+
+acmpca_list_active_ca:
+	aws acm-pca list-certificate-authorities|jq -c --arg Status "ACTIVE" '.CertificateAuthorities[] | select(.Status == $$Status)'|jq .
+
+acmpca_get_arn:
+	@echo $(ARN)
+
+acmpca_enable:
+	aws acm-pca restore-certificate-authority --certificate-authority-arn $(SWITCHABLE_CA_ARN)
+	aws acm-pca update-certificate-authority --certificate-authority-arn $(SWITCHABLE_CA_ARN) --status ACTIVE
+
+acmpca_disable:
+	aws acm-pca update-certificate-authority --certificate-authority-arn $(SWITCHABLE_CA_ARN) --status DISABLED
+	aws acm-pca delete-certificate-authority --certificate-authority-arn $(SWITCHABLE_CA_ARN) --permanent-deletion-time-in-days 30

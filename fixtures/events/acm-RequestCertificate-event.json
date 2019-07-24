@@ -1,0 +1,7 @@
+{
+  "body": "{\"CertificateAuthorityArn\": \"arn:aws:acm-pca:eu-west-1:497086895112:certificate-authority/f9805344-bf81-44f0-b937-698b9c229cde\",\"DomainName\": \"venafi.example.com\"}",
+  "httpMethod": "POST",
+  "headers": {
+    "X-Amz-Target": "CertificateManager.RequestCertificate"
+  }
+}
