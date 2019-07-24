@@ -47,6 +47,7 @@ Resources:
             - Effect: Allow
               Action:
                 - 'dynamodb:GetItem'
+                - 'dynamodb:PutItem'
               Resource:
                 'Fn::Join':
                   - ''
@@ -109,14 +110,6 @@ Resources:
                     - ':'
                     - Ref: 'AWS::AccountId'
                     - ':table/CertPolicyTable'
-      Events:
-        ApiGet:
-          Type: Api
-          Properties:
-            Path: /{PolicyID}
-            Method: ANY
-        Cron:
-          Type:
   CertPolicyTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
