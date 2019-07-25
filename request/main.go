@@ -197,8 +197,8 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 	}, nil
 }
 
-//TODO: Include custom error message into body
 func clientError(status int, body string) (events.APIGatewayProxyResponse, error) {
+	//TODO: try to make error compatible with aws cli commands
 	temp := struct {
 		Msg string `json:"msg"`
 	}{
