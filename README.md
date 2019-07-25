@@ -95,3 +95,5 @@ Venafi lambda can pass standart requests to ACM and ACMPCA thru it. You should s
 ```bash
 aws acm-pca list-certificate-authorities --endpoint-url http://localhost:3000/request
 ``` 
+
+TODO: add logs configuration
