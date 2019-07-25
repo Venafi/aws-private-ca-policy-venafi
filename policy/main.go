@@ -46,6 +46,9 @@ func HandleRequest() error {
 }
 
 func kmsDecrypt(encrypted string) (string, error) {
+	if encrypted == "" {
+		return "", nil
+	}
 	cfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
 		return "", err
