@@ -72,9 +72,11 @@ Additionally you can add VenafiZone field:
 1. Copy resource-policy-example.json to resource-policy.json and and customize the settings.
 
 1. Apply the policy to the API endpoint. To get the api-id, run the `aws apigateway get-rest-apis` command.
+    Example:
     ```bash
+    API_ID=$(aws apigateway get-rest-apis| jq -r .items[].id)
     aws apigateway update-rest-api \
-        --rest-api-id api-id \
+        --rest-api-id ${API_ID} \
         --patch-operations \
         op=replace,path=/policy,value=$(jq -c -a @text resource-policy.json)
     ``` 
@@ -84,6 +86,21 @@ Additionally you can add VenafiZone field:
     aws dynamodb put-item --table-name cert-policy --item '{"PolicyID": {"S":"Default"}}'
     ```
     
+1. To check policy item run:
+    ```bash
+    aws dynamodb get-item --table-name cert-policy --key '{"PolicyID": {"S":"Default"}}'
+    ```    
+    
+1. To get address of API gateway run:
+    ```bash
+    aws cloudformation describe-stacks --stack-name private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue
+    ```    
+    
+1. Check pass thru function:
+    ```bash
+    URL=$(aws cloudformation describe-stacks --stack-name private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue)
+    aws acm-pca list-certificate-authorities --endpoint-url $URL
+    ```    
 ### Usage
 
 
