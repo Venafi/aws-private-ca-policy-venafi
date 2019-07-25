@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/acm"
 	"github.com/aws/aws-sdk-go-v2/service/acmpca"
+	"log"
 	"net/http"
 )
 
@@ -56,6 +57,7 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 
 	ctx := context.TODO()
 
+	log.Println("Parsing header", request.Headers["X-Amz-Target"])
 	switch request.Headers["X-Amz-Target"] {
 	case acmpcaIssueCertificate:
 		return venafiACMPCAIssueCertificateRequest(request)
@@ -88,6 +90,7 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 
 func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 
+	log.Println("Requesting ACMP CA certificate")
 	var err error
 	ctx := context.TODO()
 	//TODO: Parse request body with CSR
