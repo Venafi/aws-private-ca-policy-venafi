@@ -191,22 +191,10 @@ func TestACMCertificate(t *testing.T) {
 
 }
 
-func TestPassThru(t *testing.T) {
-	//## ACM methods that must be accepted by Request Lamdba function:
-	//TODO: DescribeCertificate|https://docs.aws.amazon.com/acm/latest/APIReference/API_DescribeCertificate.html (pass-thru)
-	//TODO: ExportCertificate|https://docs.aws.amazon.com/acm/latest/APIReference/API_ExportCertificate.html (pass-thru)
-	//TODO: GetCertificate|https://docs.aws.amazon.com/acm/latest/APIReference/API_GetCertificate.html] (pass-thru)
-	//TODO: ListCertificates|https://docs.aws.amazon.com/acm/latest/APIReference/API_ListCertificates.html] (pass-thru)
-	//TODO: RenewCertificate|https://docs.aws.amazon.com/acm/latest/APIReference/API_RenewCertificate.html] (pass-thru)
-
-	//## ACM PCA methods that must be accepted by Request Lamdba function:
-	//TODO: [GetCertificate|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_GetCertificate.html] (pass-thru)
-	//TODO: [GetCertificateAuthorityCertificate|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_GetCertificateAuthorityCertificate.html] (pass-thru)
-	//TODO: [RevokeCertificate|https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_RevokeCertificate.html] (pass-thru)
+func TestListCertificateAuthoritiesPassThru(t *testing.T) {
 	var headers map[string]string
 	targets := map[string]string{
 		acmpcaListCertificateAuthorities: acmpcaListCertificateAuthoritiesRequest,
-		acmpcaGetCertificate:             acmpcaGetCertificateRequest,
 	}
 
 	for target, body := range targets {
@@ -219,9 +207,9 @@ func TestPassThru(t *testing.T) {
 			t.Fatalf("Request returned error: %s", err)
 		}
 
-		//if certResp.StatusCode != 200 {
-		//	t.Fatalf(wrongResponseCode, certResp.StatusCode, certResp.Body)
-		//}
+		if certResp.StatusCode != 200 {
+			t.Fatalf(wrongResponseCode, certResp.StatusCode, certResp.Body)
+		}
 		t.Logf("Resp is:\n %s", certResp.Body)
 	}
 
