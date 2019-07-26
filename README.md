@@ -2,11 +2,11 @@
 
 ## AWS Lambda Venafi integration
 
-#### How it works diagram
+#### Diagram illustrating how it works (note the "user" will most likely be an application rather than a person and the solution also supports the case where ACM generates the key pair and CSR and returns the certificate, private key, and chain certificates to the "user")
 
 ![Self-editing Diagram](Diagram.svg)
 
-#### IAM user roles
+### IAM User Roles
 
 1. Lambda role should have following policies assigned:
     AWSCertificateManagerPrivateCAUser
@@ -43,7 +43,7 @@ Additionally you can add VenafiZone field:
 
 ```
 
-### AWS Configuration steps (for developers):
+### AWS Configuration Steps (For Developers):
 
 1. Create a lambda venafi role named lambda-venafi-role and attach policies to it:
     ```bash
@@ -96,19 +96,18 @@ Additionally you can add VenafiZone field:
     aws cloudformation describe-stacks --stack-name private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue
     ```    
     
-1. Check pass thru function:
+1. Check pass-thru function:
     ```bash
     URL=$(aws cloudformation describe-stacks --stack-name private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue)
     aws acm-pca list-certificate-authorities --endpoint-url $URL
     ```    
 ### Usage
 
-
 To determine request type proper "X-Amz-Target" header must be set.  
 TODO: List of headers here
      
-#### Pass thru
-Venafi lambda can pass standart requests to ACM and ACMPCA thru it. You should specify endpoint url to API deployed url. For example:
+#### Pass-Thru
+The Venafi certificate request Lambda can pass through requests from native AWS tools to ACM and ACMPCA. Just specify the `--endpoint-url` parameter with the URL where you published the API. For example:
 ```bash
 aws acm-pca list-certificate-authorities --endpoint-url http://localhost:3000/request
 ``` 
