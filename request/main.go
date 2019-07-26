@@ -25,7 +25,8 @@ func (e venafiError) Error() string {
 const (
 	acmRequestCertificate  = "CertificateManager.RequestCertificate"
 	acmpcaIssueCertificate = "ACMPrivateCA.IssueCertificate"
-	defaultZone            = "Default"
+	//TODO: make zone configurable
+	defaultZone = "Default"
 
 	// ErrNameNotProvided is thrown when a name is not provided
 	ErrNameNotProvided venafiError = "no name was provided in the HTTP body"
@@ -57,7 +58,7 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 
 	ctx := context.TODO()
 
-	log.Println("Parsing header", request.Headers["X-Amz-Target"])
+	log.Println("ACMPCAHandler started. Parsing header", request.Headers["X-Amz-Target"])
 	switch request.Headers["X-Amz-Target"] {
 	case acmpcaIssueCertificate:
 		return venafiACMPCAIssueCertificateRequest(request)

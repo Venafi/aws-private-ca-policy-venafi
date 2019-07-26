@@ -18,6 +18,7 @@ import (
 var vcertConnector endpoint.Connector
 
 func HandleRequest() error {
+	log.Println("Starting policy lambda.")
 	names, err := common.GetAllPoliciesNames()
 	if err != nil {
 		fmt.Println(err)
