@@ -143,12 +143,17 @@ Resources:
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt CertPolicyLambda.Arn
 
-  LogGroup:
+  RequestLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Join ['/', ['/aws/lambda', !Ref CertRequestLambda]]
       RetentionInDays: 7 # days
 
+  PolicyLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['/', ['/aws/lambda', !Ref CertPolicyLambda]]
+      RetentionInDays: 7 # days
 Outputs:
   # This API creates a role and manages Venafi policies for enrolling certificates with an Amazon private CA.
   # To find out more about implicit resources, you can review Serverless Application Model (SAM) that is generated.
