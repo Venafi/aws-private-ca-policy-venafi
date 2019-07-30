@@ -62,11 +62,6 @@ Resources:
           Properties:
             Path: /request
             Method: POST
-        ApiGet:
-          Type: Api
-          Properties:
-            Path: /get/{certArn}
-            Method: ANY
   CertPolicyLambda:
     Type: 'AWS::Serverless::Function'
     Properties:

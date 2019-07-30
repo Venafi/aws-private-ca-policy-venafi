@@ -47,6 +47,7 @@ func HandleRequest() error {
 }
 
 func kmsDecrypt(encrypted string) (string, error) {
+	log.Println("Decrypting variable")
 	cfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
 		return "", err
