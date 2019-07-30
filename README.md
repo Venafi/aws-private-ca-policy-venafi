@@ -1,18 +1,23 @@
-# This is work in progress
+Venafi Policy Enforcement for Amazon Private CA
+===============================================
 
-## AWS Lambda Venafi integration
+<img src="https://www.venafi.com/sites/default/files/content/body/Light_background_logo.png" width="330px" height="69px"/>
 
-#### How it works diagram
+This UNDER DEVELOPMENT solution implements two [AWS Lambda](https://aws.amazon.com/lambda/) functions that allow enforcement of enterprise security policy for certificate requests directed at an [Amazon Certificate Manager Private CA](https://aws.amazon.com/certificate-manager/private-certificate-authority/).  The solution uses the [VCert-Go](https://github.com/Venafi/vcert) library to retrieve enterprise security policy from [Venafi Platform](https://www.venafi.com/platform/trust-protection-platform) or [Venafi Cloud](https://pki.venafi.com/venafi-cloud/).
+
+##### Diagram illustrating how it works: 
 
 ![Self-editing Diagram](Diagram.svg)
 
-#### IAM user roles
+Note: the "user" will most likely be an application rather than a person and the solution also supports the case where ACM generates the key pair and CSR and returns the certificate, private key, and chain certificates to the "user".
 
-1. Lambda role should have following policies assigned:
-    AWSCertificateManagerPrivateCAUser
-    AmazonDynamoDBFullAccess (TODO: this can be and should be reduced)
+### Permissions
+
+The IAM user role for the Lambda functions should have following policies assigned:
+- AWSCertificateManagerPrivateCAUser
+- AmazonDynamoDBFullAccess (TODO: this can be and should be reduced)
     
-#### Example of user signing request:
+### Example certificate signing request:
 
 ```json
 {
@@ -26,8 +31,9 @@
 }
 ```
 
-Csr field is a base64 encoded string of actual CSR. This request is the same as ACM PCA IssueCertificate API - https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_IssueCertificate.html
-Additionally you can add VenafiZone field:
+The `Csr` parameter is a base64 encoded string of the actual PKCS#10 CSR. This request is the same as ACM PCA [IssueCertificate](https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_IssueCertificate.html) API method.
+
+Additionally you can add `VenafiZone` parameter to indicate the request should be checked using a non-default Venafi policy:
 
 ```json
 {
@@ -43,9 +49,9 @@ Additionally you can add VenafiZone field:
 
 ```
 
-### AWS Configuration steps (for developers):
+### AWS Configuration Steps (For Developers):
 
-1. Create a lambda venafi role named lambda-venafi-role andd attach policies to it:
+1. Create an IAM role for the Lambda functions named "lambda-venafi-role" and attach policies to it:
     ```bash
     aws iam create role --role-name lambda-venafi-role
     aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
@@ -57,7 +63,7 @@ Additionally you can add VenafiZone field:
     ```
 1. Run `make build` to make binaries
 
-1. Create SAM package, it will also deploy lambda binary to s3:
+1. Create SAM package, it will also deploy Lambda binary to S3:
     ```bash
     sam package \
             --output-template-file packaged.yaml \
@@ -73,7 +79,7 @@ Additionally you can add VenafiZone field:
         --region <put your region here>
     ```
 
-1. Copy resource-policy-example.json to resource-policy.json and and customize the settings.
+1. Copy `resource-policy-example.json` to `resource-policy.json` and and customize the settings.
 
 1. Apply the policy to the API endpoint. To get the api-id, run the `aws apigateway get-rest-apis` command.
     Example:
@@ -85,36 +91,43 @@ Additionally you can add VenafiZone field:
         op=replace,path=/policy,value=$(jq -c -a @text resource-policy.json)
     ``` 
     
-1. Create policy item which will be synced:
+1. Add a Venafi zone to the policy table so certificate policy will be fetched from Venafi:
     ```bash
     aws dynamodb put-item --table-name cert-policy --item '{"PolicyID": {"S":"Default"}}'
     ```
     
-1. To check policy item run:
+1. To check the policy for the Venafi zone run:
     ```bash
     aws dynamodb get-item --table-name cert-policy --key '{"PolicyID": {"S":"Default"}}'
     ```    
     
-1. To get address of API gateway run:
+1. To get the address of the API Gateway run:
     ```bash
     aws cloudformation describe-stacks --stack-name private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue
     ```    
     
-1. Check pass thru function:
+1. Check pass-thru functionality:
     ```bash
     URL=$(aws cloudformation describe-stacks --stack-name private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue)
     aws acm-pca list-certificate-authorities --endpoint-url $URL
     ```    
 ### Usage
 
-
 To determine request type proper "X-Amz-Target" header must be set.  
 TODO: List of headers here
      
-#### Pass thru
-Venafi lambda can pass standart requests to ACM and ACMPCA thru it. You should specify endpoint url to API deployed url. For example:
+#### Pass-Thru
+The Venafi certificate request Lambda can pass through requests from native AWS tools to ACM and ACMPCA. Just specify the `--endpoint-url` parameter with the URL where you published the API. For example:
 ```bash
 aws acm-pca list-certificate-authorities --endpoint-url http://localhost:3000/request
 ``` 
 
 TODO: add logs configuration
+
+## License
+
+Copyright &copy; Venafi, Inc. All rights reserved.
+
+This solution is licensed under the Apache License, Version 2.0. See `LICENSE` for the full license text.
+
+Please direct questions/comments to opensource@venafi.com.

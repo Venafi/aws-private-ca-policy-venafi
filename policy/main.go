@@ -47,7 +47,14 @@ func HandleRequest() error {
 }
 
 func kmsDecrypt(encrypted string) (string, error) {
-	log.Println("Decrypting variable")
+	log.Println("Decrypting credential variables")
+	if encrypted == "" {
+		return "", nil
+	}
+	decodedBytes, err := base64.StdEncoding.DecodeString(encrypted)
+	if err != nil {
+		return "", err
+	}
 	cfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
 		return "", err
@@ -55,7 +62,7 @@ func kmsDecrypt(encrypted string) (string, error) {
 
 	svc := kms.New(cfg)
 	input := &kms.DecryptInput{
-		CiphertextBlob: []byte(encrypted),
+		CiphertextBlob: decodedBytes,
 	}
 
 	req := svc.DecryptRequest(input)
