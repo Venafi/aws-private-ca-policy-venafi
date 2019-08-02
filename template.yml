@@ -105,6 +105,19 @@ Resources:
                     - ':'
                     - Ref: 'AWS::AccountId'
                     - ':table/CertPolicyTable'
+#      Events:
+#        Cron:
+#          Type: Schedule
+#          Properties:
+#            Rate: cron(*/5 * * * ? *)
+#            Enabled: true
+#  ScheduledRuleSourceMapping:
+#    Type: AWS::Lambda::EventSourceMapping
+#    Properties:
+#      EventSourceArn: !GetAtt ScheduledRule.Arn
+#      FunctionName: !Ref CertPolicyLambda
+#      Enabled: true
+
   CertPolicyTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
@@ -126,9 +139,9 @@ Resources:
       ScheduleExpression: "rate(1 minute)"
       State: "ENABLED"
       Targets:
-        -
-          Arn: !GetAtt CertPolicyLambda.Arn
-          Id: "CertPolicyLambda5m"
+        - Arn: !Sub ${CertPolicyLambda.Arn}
+          Id:
+            Ref: CertPolicyLambda
 
   PermissionForEventsToInvokeLambda:
     Type: AWS::Lambda::Permission
