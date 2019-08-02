@@ -94,9 +94,11 @@ sam_update: sam_package
 get_proxy:
 	aws cloudformation --region $(REGION) describe-stacks --stack-name $(STACK_NAME) --query "Stacks[0].Outputs[0].OutputValue"
 
-get_logs:
+get_request_logs:
 	sam logs -n $(CERT_REQUEST_LAMBDA_NAME) --stack-name $(STACK_NAME)
 
+get_policy_logs:
+	sam logs -n $(CERT_POLICY_LAMBDA_NAME) --stack-name $(STACK_NAME)
 
 #ACM\PCA commands
 list_acm_arn:
