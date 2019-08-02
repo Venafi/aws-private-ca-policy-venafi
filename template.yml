@@ -1,6 +1,20 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Venafi policy integration for AWS Private CA.
+
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: aws-private-ca-policy-venafi
+    Description: (UNDER DEVELOPMENT) Venafi Lambda functions for AWS that enforce enterprise security policy for the AWS Private CA.
+    Author: Venafi Inc.
+    SpdxLicenseId: Apache-2.0
+    LicenseUrl: LICENSE.txt
+    ReadmeUrl: README.md
+    Labels: ['tls','ssl','certificates','aws-certificate-manager','venafi-platform','venafi-cloud']
+    HomePageUrl: https://github.com/Venafi/aws-private-ca-policy-venafi
+    SemanticVersion: 0.0.1
+    SourceCodeUrl: https://github.com/Venafi/aws-private-ca-policy-venafi
+
 Parameters:
   TPPUSER:
     Type: String
@@ -38,9 +52,6 @@ Resources:
       #TODO: attach AWSCertificateManagerPrivateCAUser role to Lambda
       #TODO: provide json for creating a role
       Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/lambda-venafi-role'
-      Environment:
-        Variables:
-          S3_BUCKET: cert-request-lambda
       Policies:
         - Version: '2012-10-17'
           Statement:
@@ -62,11 +73,6 @@ Resources:
           Properties:
             Path: /request
             Method: POST
-        ApiGet:
-          Type: Api
-          Properties:
-            Path: /get/{certArn}
-            Method: ANY
   CertPolicyLambda:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -92,7 +98,6 @@ Resources:
             Fn::Sub: ${CLOUDAPIKEY}
           ZONE:
             Fn::Sub: ${ZONE}
-          S3_BUCKET: cert-policy-lambda
       Policies:
         - Version: '2012-10-17'
           Statement:
@@ -110,6 +115,19 @@ Resources:
                     - ':'
                     - Ref: 'AWS::AccountId'
                     - ':table/CertPolicyTable'
+#      Events:
+#        Cron:
+#          Type: Schedule
+#          Properties:
+#            Rate: cron(*/5 * * * ? *)
+#            Enabled: true
+#  ScheduledRuleSourceMapping:
+#    Type: AWS::Lambda::EventSourceMapping
+#    Properties:
+#      EventSourceArn: !GetAtt ScheduledRule.Arn
+#      FunctionName: !Ref CertPolicyLambda
+#      Enabled: true
+
   CertPolicyTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
@@ -131,9 +149,9 @@ Resources:
       ScheduleExpression: "rate(1 minute)"
       State: "ENABLED"
       Targets:
-        -
-          Arn: !GetAtt CertPolicyLambda.Arn
-          Id: "CertPolicyLambda5m"
+        - Arn: !Sub ${CertPolicyLambda.Arn}
+          Id:
+            Ref: CertPolicyLambda
 
   PermissionForEventsToInvokeLambda:
     Type: AWS::Lambda::Permission
@@ -143,12 +161,17 @@ Resources:
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt CertPolicyLambda.Arn
 
-  LogGroup:
+  RequestLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Join ['/', ['/aws/lambda', !Ref CertRequestLambda]]
       RetentionInDays: 7 # days
 
+  PolicyLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['/', ['/aws/lambda', !Ref CertPolicyLambda]]
+      RetentionInDays: 7 # days
 Outputs:
   # This API creates a role and manages Venafi policies for enrolling certificates with an Amazon private CA.
   # To find out more about implicit resources, you can review Serverless Application Model (SAM) that is generated.

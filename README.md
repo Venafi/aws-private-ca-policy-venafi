@@ -56,6 +56,10 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
     aws iam create role --role-name lambda-venafi-role
     aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
     aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AWSCertificateManagerPrivateCAUser
+   AmazonDynamoDBFullAccesswithDataPipeline
+   AWSCertificateManagerPrivateCAUser
+   AWSKeyManagementServicePowerUser
+   AWSCertificateManagerFullAccess
     ```
 1. Run `make build` to make binaries
 
@@ -63,15 +67,15 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
     ```bash
     sam package \
             --output-template-file packaged.yaml \
-            --s3-bucket venafi-pca-policy
+            --s3-bucket venafi-policy-sam
     ```
 
 1. Deploy the SAM package to AWS:
     ```bash
     sam deploy \
-        --template-file packaged.yaml \
-        --stack-name venafi-pca-policy \
-        --capabilities CAPABILITY_IAM \
+            --template-file packaged.yaml \
+            --stack-name private-ca-policy-venafi \
+            --capabilities CAPABILITY_IAM \
         --region <put your region here>
     ```
 

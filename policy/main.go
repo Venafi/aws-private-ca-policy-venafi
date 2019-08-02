@@ -18,6 +18,7 @@ import (
 var vcertConnector endpoint.Connector
 
 func HandleRequest() error {
+	log.Println("Starting policy lambda.")
 	names, err := common.GetAllPoliciesNames()
 	if err != nil {
 		fmt.Println(err)
@@ -46,6 +47,7 @@ func HandleRequest() error {
 }
 
 func kmsDecrypt(encrypted string) (string, error) {
+	log.Println("Decrypting credential variables")
 	if encrypted == "" {
 		return "", nil
 	}
