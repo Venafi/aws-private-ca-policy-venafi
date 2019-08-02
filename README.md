@@ -49,7 +49,7 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 
 ```
 
-### AWS Configuration Steps (For Developers):
+### AWS Configuration Steps:
 
 1. Create an IAM role for the Lambda functions named "lambda-venafi-role" and attach policies to it:
     ```bash
