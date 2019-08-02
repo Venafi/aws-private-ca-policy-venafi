@@ -38,9 +38,6 @@ Resources:
       #TODO: attach AWSCertificateManagerPrivateCAUser role to Lambda
       #TODO: provide json for creating a role
       Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/lambda-venafi-role'
-      Environment:
-        Variables:
-          S3_BUCKET: cert-request-lambda
       Policies:
         - Version: '2012-10-17'
           Statement:
@@ -87,7 +84,6 @@ Resources:
             Fn::Sub: ${CLOUDAPIKEY}
           ZONE:
             Fn::Sub: ${ZONE}
-          S3_BUCKET: cert-policy-lambda
       Policies:
         - Version: '2012-10-17'
           Statement:

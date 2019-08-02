@@ -73,7 +73,7 @@ update_policy_code:
 sam_package:
 	sam package \
         --output-template-file packaged.yaml \
-        --s3-bucket venafi-policy-sam
+        --s3-bucket aws-private-ca-policy-venafi
 
 sam_deploy:
 	sam deploy \
