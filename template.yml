@@ -1,6 +1,20 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Venafi policy integration for AWS Private CA.
+
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: aws-private-ca-policy-venafi
+    Description: (UNDER DEVELOPMENT) Venafi Lambda functions for AWS that enforce enterprise security policy for the AWS Private CA.
+    Author: Venafi Inc.
+    SpdxLicenseId: Apache-2.0
+    LicenseUrl: LICENSE.txt
+    ReadmeUrl: README.md
+    Labels: ['tls','ssl','certificates','aws-certificate-manager','venafi-platform','venafi-cloud']
+    HomePageUrl: https://github.com/Venafi/aws-private-ca-policy-venafi
+    SemanticVersion: 0.0.1
+    SourceCodeUrl: https://github.com/Venafi/aws-private-ca-policy-venafi
+
 Parameters:
   TPPUSER:
     Type: String
