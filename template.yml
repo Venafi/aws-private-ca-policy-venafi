@@ -37,8 +37,6 @@ Parameters:
     Default: ""
     Type: String
 Resources:
-  #TODO: add DynamDB items with policy names
-  #TODO: add ACM PCA configuration ( or maybe do it in separated template
   CertRequestLambda:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -92,12 +90,11 @@ Resources:
             Fn::Sub: ${TPPPASSWORD}
           TPPURL:
             Fn::Sub: ${TPPURL}
-          CLOUDURL:
-            Fn::Sub: ${CLOUDURL}
-          CLOUDAPIKEY:
-            Fn::Sub: ${CLOUDAPIKEY}
+          CLOUDURL: !Ref CLOUDURL
+          CLOUDAPIKEY: !Ref CLOUDAPIKEY
           ZONE:
             Fn::Sub: ${ZONE}
+          TEST: "test"
       Policies:
         - Version: '2012-10-17'
           Statement:
@@ -153,3 +150,6 @@ Outputs:
   CertRequestApi:
     Description: "API Gateway endpoint URL for Prod stage for Hello World function"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Stage/request/"
+  Params:
+    Description: "test"
+    Value: !Ref CLOUDURL
