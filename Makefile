@@ -83,7 +83,7 @@ sam_deploy_cloud:
         --stack-name $(STACK_NAME) \
         --capabilities CAPABILITY_IAM \
         --region $(REGION) \
-        --parameter-overrides CLOUDAPIKEY=$$CLOUDAPIKEY CLOUDURL=$$CLOUDURL
+        --parameter-overrides CLOUDAPIKEY=$$CLOUDAPIKEY_ENC CLOUDURL=$$CLOUDURL
 	aws cloudformation wait stack-create-complete --stack-name $(STACK_NAME)
 
 sam_deploy_tpp:
@@ -92,7 +92,7 @@ sam_deploy_tpp:
         --stack-name $(STACK_NAME) \
         --capabilities CAPABILITY_IAM \
         --region $(REGION) \
-        --parameter-overrides TPPUSER=$$TPPUSER,TPPURL=$$TPPURL,TPPPASSWORD=$$TPPPASSWORD
+        --parameter-overrides TPPUSER=$$TPPUSER,TPPURL=$$TPPURL,TPPPASSWORD=$$TPPPASSWORD_ENC
 	aws cloudformation wait stack-create-complete --stack-name $(STACK_NAME)
 
 sam_delete:
