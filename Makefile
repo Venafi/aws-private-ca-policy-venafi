@@ -103,6 +103,11 @@ sam_update: sam_package
 	aws cloudformation update-stack --stack-name $(STACK_NAME) --template-body file://packaged.yaml --capabilities CAPABILITY_AUTO_EXPAND
 	aws cloudformation wait stack-update-complete --stack-name $(STACK_NAME)
 
+sam_publish: sam_package
+	sam publish \
+        --template packaged.yaml \
+        --region $(REGION)
+
 get_proxy:
 	aws cloudformation --region $(REGION) describe-stacks --stack-name $(STACK_NAME) --query "Stacks[0].Outputs[0].OutputValue"
 

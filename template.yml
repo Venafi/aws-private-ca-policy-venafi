@@ -6,7 +6,7 @@ Metadata:
   AWS::ServerlessRepo::Application:
     Name: aws-private-ca-policy-venafi
     Description: (UNDER DEVELOPMENT) Venafi Lambda functions for AWS that enforce enterprise security policy for the AWS Private CA.
-    Author: Venafi Inc.
+    Author: Venafi
     SpdxLicenseId: Apache-2.0
     LicenseUrl: LICENSE.txt
     ReadmeUrl: README.md
@@ -33,9 +33,7 @@ Parameters:
     NoEcho : "true"
     Default: ""
     Type: String
-  ZONE:
-    Default: ""
-    Type: String
+
 Resources:
   CertRequestLambda:
     Type: 'AWS::Serverless::Function'
@@ -71,6 +69,7 @@ Resources:
           Properties:
             Path: /request
             Method: POST
+
   CertPolicyLambda:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -84,17 +83,11 @@ Resources:
       Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/lambda-venafi-role'
       Environment:
         Variables:
-          TPPUSER:
-            Fn::Sub: ${TPPUSER}
-          TPPPASSWORD:
-            Fn::Sub: ${TPPPASSWORD}
-          TPPURL:
-            Fn::Sub: ${TPPURL}
+          TPPUSER: !Ref  TPPUSER
+          TPPPASSWORD: !Ref TPPPASSWORD
+          TPPURL: !Ref TPPURL
           CLOUDURL: !Ref CLOUDURL
           CLOUDAPIKEY: !Ref CLOUDAPIKEY
-          ZONE:
-            Fn::Sub: ${ZONE}
-          TEST: "test"
       Policies:
         - Version: '2012-10-17'
           Statement:
