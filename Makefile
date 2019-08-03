@@ -8,7 +8,7 @@ CERT_POLICY_LAMBDA_NAME := CertPolicyLambda
 CERT_POLICY_DEPLOYED_LAMBDA_NAME := $$(aws lambda list-functions |jq -r '.Functions[].FunctionName|select(.| contains("$(CERT_POLICY_LAMBDA_NAME)"))')
 CERT_POLICY_VERSION := 0.0.1
 
-STACK_NAME := private-ca-policy-venafi
+STACK_NAME := serverlessrepo-aws-private-ca-policy-venafi
 REGION := eu-west-1
 
 # List of tests to run
