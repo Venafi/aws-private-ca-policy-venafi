@@ -47,7 +47,7 @@ func HandleRequest() error {
 }
 
 func kmsDecrypt(encrypted string) (string, error) {
-	log.Println("Decrypting credential variables")
+	log.Printf("Decrypting encrypted variable")
 	if encrypted == "" {
 		return "", nil
 	}
@@ -70,7 +70,7 @@ func kmsDecrypt(encrypted string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return result.String(), nil
+	return string(result.Plaintext[:]), nil
 }
 func main() {
 	var err error

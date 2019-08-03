@@ -122,8 +122,6 @@ The Venafi certificate request Lambda can pass through requests from native AWS 
 aws acm-pca list-certificate-authorities --endpoint-url http://localhost:3000/request
 ``` 
 
-TODO: add logs configuration
-
 ## License
 
 Copyright &copy; Venafi, Inc. All rights reserved.

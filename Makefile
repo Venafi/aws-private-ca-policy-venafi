@@ -1,9 +1,11 @@
 CERT_REQUEST_NAME := cert-request
 CERT_REQUEST_LAMBDA_NAME := CertRequestLambda
+CERT_REQUEST_DEPLOYED_LAMBDA_NAME := $$(aws lambda list-functions |jq -r '.Functions[].FunctionName|select(.| contains("$(CERT_REQUEST_LAMBDA_NAME)"))')
 CERT_REQUEST_VERSION := 0.0.1
 
 CERT_POLICY_NAME := cert-policy
 CERT_POLICY_LAMBDA_NAME := CertPolicyLambda
+CERT_POLICY_DEPLOYED_LAMBDA_NAME := $$(aws lambda list-functions |jq -r '.Functions[].FunctionName|select(.| contains("$(CERT_POLICY_LAMBDA_NAME)"))')
 CERT_POLICY_VERSION := 0.0.1
 
 STACK_NAME := private-ca-policy-venafi
@@ -75,12 +77,22 @@ sam_package:
         --output-template-file packaged.yaml \
         --s3-bucket aws-private-ca-policy-venafi
 
-sam_deploy:
-	sam deploy \
+sam_deploy_cloud:
+	aws cloudformation deploy \
         --template-file packaged.yaml \
         --stack-name $(STACK_NAME) \
         --capabilities CAPABILITY_IAM \
-        --region $(REGION) || echo "Looks like no changes in stack"
+        --region $(REGION) \
+        --parameter-overrides CLOUDAPIKEY=$$CLOUDAPIKEY_ENC CLOUDURL=$$CLOUDURL
+	aws cloudformation wait stack-create-complete --stack-name $(STACK_NAME)
+
+sam_deploy_tpp:
+	aws cloudformation deploy \
+        --template-file packaged.yaml \
+        --stack-name $(STACK_NAME) \
+        --capabilities CAPABILITY_IAM \
+        --region $(REGION) \
+        --parameter-overrides TPPUSER=$$TPPUSER,TPPURL=$$TPPURL,TPPPASSWORD=$$TPPPASSWORD_ENC
 	aws cloudformation wait stack-create-complete --stack-name $(STACK_NAME)
 
 sam_delete:
@@ -94,9 +106,15 @@ sam_update: sam_package
 get_proxy:
 	aws cloudformation --region $(REGION) describe-stacks --stack-name $(STACK_NAME) --query "Stacks[0].Outputs[0].OutputValue"
 
-get_logs:
+get_request_logs:
 	sam logs -n $(CERT_REQUEST_LAMBDA_NAME) --stack-name $(STACK_NAME)
 
+get_policy_logs:
+	sam logs -n $(CERT_POLICY_LAMBDA_NAME) --stack-name $(STACK_NAME)
+
+get_lambdas_config:
+	aws lambda get-function-configuration --function-name  $(CERT_POLICY_DEPLOYED_LAMBDA_NAME)
+	aws lambda get-function-configuration --function-name  $(CERT_REQUEST_DEPLOYED_LAMBDA_NAME)
 
 #ACM\PCA commands
 list_acm_arn:
