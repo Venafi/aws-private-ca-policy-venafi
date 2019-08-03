@@ -18,16 +18,18 @@ import (
 var vcertConnector endpoint.Connector
 
 func HandleRequest() error {
-	log.Println("Starting policy lambda.")
+	log.Println("Getting policies")
 	names, err := common.GetAllPoliciesNames()
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
 	for _, name := range names {
+		log.Printf("Getting policy %s", name)
 		vcertConnector.SetZone(name)
 		p, err := vcertConnector.ReadPolicyConfiguration()
 		if err == endpoint.VenafiErrorZoneNotFound {
+			log.Printf("Policy %s not found. Deleting.", name)
 			err = common.DeletePolicy(name)
 			if err != nil {
 				return err
@@ -37,6 +39,7 @@ func HandleRequest() error {
 			fmt.Println(err)
 			return err
 		}
+		log.Printf("Saving policy %s", name)
 		err = common.SavePolicy(name, *p)
 		if err != nil {
 			fmt.Println(err)
@@ -73,6 +76,7 @@ func kmsDecrypt(encrypted string) (string, error) {
 	return string(result.Plaintext[:]), nil
 }
 func main() {
+	log.Println("Starting policy lambda.")
 	var err error
 
 	apiKey := os.Getenv("CLOUDAPIKEY")
@@ -109,6 +113,7 @@ func main() {
 }
 
 func getConnection(tppUrl, tppUser, tppPassword, cloudUrl, cloudKey, trustBundle string) (endpoint.Connector, error) {
+	log.Println("Getting Venafi connection")
 	var config vcert.Config
 	if tppUrl != "" && tppUser != "" && tppPassword != "" {
 		config = vcert.Config{

@@ -8,7 +8,7 @@ CERT_POLICY_LAMBDA_NAME := CertPolicyLambda
 CERT_POLICY_DEPLOYED_LAMBDA_NAME := $$(aws lambda list-functions |jq -r '.Functions[].FunctionName|select(.| contains("$(CERT_POLICY_LAMBDA_NAME)"))')
 CERT_POLICY_VERSION := 0.0.1
 
-STACK_NAME := private-ca-policy-venafi
+STACK_NAME := serverlessrepo-aws-private-ca-policy-venafi
 REGION := eu-west-1
 
 # List of tests to run
@@ -102,6 +102,11 @@ sam_delete:
 sam_update: sam_package
 	aws cloudformation update-stack --stack-name $(STACK_NAME) --template-body file://packaged.yaml --capabilities CAPABILITY_AUTO_EXPAND
 	aws cloudformation wait stack-update-complete --stack-name $(STACK_NAME)
+
+sam_publish: sam_package
+	sam publish \
+        --template packaged.yaml \
+        --region $(REGION)
 
 get_proxy:
 	aws cloudformation --region $(REGION) describe-stacks --stack-name $(STACK_NAME) --query "Stacks[0].Outputs[0].OutputValue"
