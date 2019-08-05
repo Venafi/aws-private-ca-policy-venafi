@@ -35,6 +35,13 @@ Parameters:
     Type: String
 
 Resources:
+  VenafiLambdaApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: v1
+      Auth:
+        DefaultAuthorizer: AWS_IAM
+
   CertRequestLambda:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -69,6 +76,9 @@ Resources:
           Properties:
             Path: /request
             Method: POST
+            RestApiId: !Ref VenafiLambdaApi
+            Auth:
+              Authorizer: AWS_IAM
 
   CertPolicyLambda:
     Type: 'AWS::Serverless::Function'
@@ -142,7 +152,7 @@ Outputs:
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   CertRequestApi:
     Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Stage/request/"
+    Value: !Sub "https://${VenafiLambdaApi}.execute-api.${AWS::Region}.amazonaws.com/Stage/request/"
   Params:
     Description: "test"
     Value: !Ref CLOUDURL
