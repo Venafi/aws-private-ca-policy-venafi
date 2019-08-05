@@ -121,6 +121,7 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed to get policy from database: %s", err))
 	}
 
+	//TODO: also validate SigningAlgorithm from request
 	err = policy.ValidateCertificateRequest(&req)
 	if err != nil {
 		return clientError(http.StatusForbidden, err.Error())
