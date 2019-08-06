@@ -152,7 +152,7 @@ TPPURL,TPPUSER for the Platform
     
 1. To get the address of the API Gateway run:
     ```bash
-    aws cloudformation describe-stacks --stack-name private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue
+    aws cloudformation describe-stacks --stack-name serverlessrepo-aws-private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue
     ```    
         
 1. Check pass-thru functionality:
