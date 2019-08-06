@@ -133,13 +133,18 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 1. Fill credentials parameters. CLOUDAPIKEY (encrypted string from IAM administrator) for Venafi Cloud and TPPPASSWORD (encrypted string from IAM administrator),
 TPPURL,TPPUSER for the Platform
 
-1. Click Deploy button to deploy cloudformation stack
+1. Click Deploy button to deploy cloudformation stack and wait untill deploy is finished.
     
 1. Add a Venafi zone to the policy table so certificate policy will be fetched from Venafi:
     ```bash
     aws dynamodb put-item --table-name cert-policy --item '{"PolicyID": {"S":"Default"}}'
     ```
-    
+
+1. Check the logs
+    ```bash
+    sam logs -n CertPolicyLambda --stack-name serverlessrepo-aws-private-ca-policy-venafi
+    sam logs -n CertRequestLambda --stack-name serverlessrepo-aws-private-ca-policy-venafi
+    ```    
 1. To check the policy for the Venafi zone run:
     ```bash
     aws dynamodb get-item --table-name cert-policy --key '{"PolicyID": {"S":"Default"}}'
