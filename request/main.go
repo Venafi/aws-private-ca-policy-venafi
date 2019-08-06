@@ -121,6 +121,7 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed to get policy from database: %s", err))
 	}
 
+	//TODO: also validate SigningAlgorithm from request
 	err = policy.ValidateCertificateRequest(&req)
 	if err != nil {
 		return clientError(http.StatusForbidden, err.Error())
@@ -168,7 +169,10 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 	}
 	policy, err := common.GetPolicy(certRequest.VenafiZone)
 	if err == common.PolicyNotFound {
-		common.CreateEmptyPolicy(certRequest.VenafiZone)
+		err = common.CreateEmptyPolicy(certRequest.VenafiZone)
+		if err != nil {
+			fmt.Println("Error creating policy", err)
+		}
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Policy not exist in database. Policy creation is scheduled in policy lambda"))
 	} else if err != nil {
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed to get policy from database: %s", err))
