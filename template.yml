@@ -129,6 +129,3 @@ Outputs:
   CertRequestApi:
     Description: "API Gateway endpoint URL for Prod stage for Hello World function"
     Value: !Sub "https://${VenafiLambdaApi}.execute-api.${AWS::Region}.amazonaws.com/v1/request/"
-  Params:
-    Description: "test"
-    Value: !Ref CLOUDURL

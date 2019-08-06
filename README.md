@@ -154,6 +154,12 @@ TPPURL,TPPUSER for the Platform
     ```bash
     aws cloudformation describe-stacks --stack-name private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue
     ```    
+        
+1. Check pass-thru functionality:
+    ```bash
+    URL=$(aws cloudformation describe-stacks --stack-name private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue)
+    aws acm-pca list-certificate-authorities --endpoint-url $URL
+    ```    
 
 ## Instruction for developers
 
@@ -188,27 +194,6 @@ TPPURL,TPPUSER for the Platform
         --patch-operations \
         op=replace,path=/policy,value=$(jq -c -a @text resource-policy.json)
     ``` 
-    
-1. Add a Venafi zone to the policy table so certificate policy will be fetched from Venafi:
-    ```bash
-    aws dynamodb put-item --table-name cert-policy --item '{"PolicyID": {"S":"Default"}}'
-    ```
-    
-1. To check the policy for the Venafi zone run:
-    ```bash
-    aws dynamodb get-item --table-name cert-policy --key '{"PolicyID": {"S":"Default"}}'
-    ```    
-    
-1. To get the address of the API Gateway run:
-    ```bash
-    aws cloudformation describe-stacks --stack-name private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue
-    ```    
-    
-1. Check pass-thru functionality:
-    ```bash
-    URL=$(aws cloudformation describe-stacks --stack-name private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue)
-    aws acm-pca list-certificate-authorities --endpoint-url $URL
-    ```    
 ### Usage
 
 To determine request type proper "X-Amz-Target" header must be set.  
