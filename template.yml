@@ -41,7 +41,7 @@ Resources:
       StageName: v1
       Auth:
         DefaultAuthorizer: AWS_IAM
-        InvokeRole: !Sub
+        InvokeRole: !Sub 'arn:aws:iam::${AWS::AccountId}:role/lambda-venafi-role'
 
   CertRequestLambda:
     Type: 'AWS::Serverless::Function'
