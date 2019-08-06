@@ -48,19 +48,94 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 }
 
 ```
+## User instructions
+
+### Setup Lambda role and KMS key for credentials encryption
+
+### IAM Administrator instructions
+1. Create a role for Venafi lambda execution
+    ```
+    aws iam create-role --role-name lambda-venafi-role
+    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess    
+    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AWSCertificateManagerPrivateCAUser
+    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AWSKeyManagementServicePowerUser
+    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AWSCertificateManagerFullAccess
+    ```
+1. Setup KMS
+
+- Create KMS key for encryption (if you already have KMS key you can skip this step). Please review KMS documentation for more options: https://docs.aws.amazon.com/cli/latest/reference/kms/index.html  
+    ```bash    
+    KEY_ID=$(aws kms create-key --description "Encryption key for Venafi credentials"|jq -r .KeyMetadata.KeyId)
+    aws kms create-alias --alias-name alias/venafi-encryption-key --target-key-id ${KEY_ID}
+    aws kms describe-key --key-id alias/venafi-encryption-key
+    ```
+- Create key policy for venafi lambda:
+    ```bash
+    LAMBDA_ROLE_ARN=$(aws iam get-role --role-name lambda-venafi-role|jq -r .Role.Arn)
+    KMS_KEY_ARN=$(aws kms describe-key --key-id alias/venafi-encryption-key|jq .KeyMetadata.Arn)
+    ACC_ID=$(aws sts  get-caller-identity|jq -r .Account)
+    cat << EOF > key-policy.json
+    {
+      "Version" : "2012-10-17",
+      "Statement" : [ {
+        "Sid" : "EnableIAMUserPermissions",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::${ACC_ID}:root"
+        },
+        "Action" : "kms:*",
+        "Resource" : ${KMS_KEY_ARN}
+      }, {
+        "Sid" : "Allow use of the key",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "${LAMBDA_ROLE_ARN}"
+        },
+        "Action" : [ "kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey" ],
+        "Resource" : ${KMS_KEY_ARN}
+      }, {
+        "Sid" : "Allow attachment of persistent resources",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "${LAMBDA_ROLE_ARN}"
+        },
+        "Action" : [ "kms:CreateGrant", "kms:ListGrants", "kms:RevokeGrant" ],
+        "Resource" : ${KMS_KEY_ARN},
+        "Condition" : {
+          "Bool" : {
+            "kms:GrantIsForAWSResource" : "true"
+          }
+        }
+      } ]
+    }
+    EOF
+    ```
+
+- Attach policy to key
+    ```bash
+    aws kms put-key-policy \
+          --key-id $KEY_ID \
+          --policy-name default \
+          --policy file://key-policy.json 
+    ```
+- Encrypt credentials variable depending of what you're using Cloud or Platform. API key for cloud and TPP password for the Platform
+    ```bash
+    aws kms encrypt --key-id ${KEY_ID} --plaintext veryBigSecret|jq -r .CiphertextBlob
+    ```
+
+- Pass this encrypted string to engineer who will deploy lambda
+
+### Engineer instructions
+
+1. Open Venafi application page: https://eu-west-1.console.aws.amazon.com/lambda/home?region=eu-west-1#/create/app?applicationId=arn:aws:serverlessrepo:eu-west-1:497086895112:applications/aws-private-ca-policy-venafi
+
+1. Fill credentials parameters. 
+    
+## Instruction for developers
 
 ### AWS Configuration Steps:
 
-1. Create an IAM role for the Lambda functions named "lambda-venafi-role" and attach policies to it:
-    ```bash
-    aws iam create role --role-name lambda-venafi-role
-    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
-    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AWSCertificateManagerPrivateCAUser
-   AmazonDynamoDBFullAccesswithDataPipeline
-   AWSCertificateManagerPrivateCAUser
-   AWSKeyManagementServicePowerUser
-   AWSCertificateManagerFullAccess
-    ```
 1. Run `make build` to make binaries
 
 1. Create SAM package, it will also deploy Lambda binary to S3:

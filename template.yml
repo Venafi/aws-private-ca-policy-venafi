@@ -41,6 +41,7 @@ Resources:
       StageName: v1
       Auth:
         DefaultAuthorizer: AWS_IAM
+        InvokeRole: !Sub
 
   CertRequestLambda:
     Type: 'AWS::Serverless::Function'
@@ -51,25 +52,13 @@ Resources:
       Description: Venfi request with a RESTful API endpoint using Amazon API Gateway.
       MemorySize: 512
       Timeout: 10
-      #TODO: get role from parameters
-      #TODO: attach AWSCertificateManagerPrivateCAUser role to Lambda
       #TODO: provide json for creating a role
       Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/lambda-venafi-role'
       Policies:
-        - Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - 'dynamodb:GetItem'
-                - 'dynamodb:PutItem'
-              Resource:
-                'Fn::Join':
-                  - ''
-                  - - 'arn:aws:dynamodb:'
-                    - Ref: 'AWS::Region'
-                    - ':'
-                    - Ref: 'AWS::AccountId'
-                    - ':table/CertPolicyTable'
+        - CloudWatchPutMetricPolicy: {}
+        - DynamoDBCrudPolicy:
+            TableName:
+              Ref: CertPolicyTable
       Events:
         ApiRequest:
           Type: Api
@@ -89,7 +78,6 @@ Resources:
       Description: Venfi policy with a RESTful API endpoint using Amazon API Gateway.
       MemorySize: 512
       Timeout: 10
-      #TODO: get role from parameters
       Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/lambda-venafi-role'
       Environment:
         Variables:
@@ -99,22 +87,10 @@ Resources:
           CLOUDURL: !Ref CLOUDURL
           CLOUDAPIKEY: !Ref CLOUDAPIKEY
       Policies:
-        - Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - 'dynamodb:DeleteItem'
-                - 'dynamodb:GetItem'
-                - 'dynamodb:PutItem'
-                - 'dynamodb:UpdateItem'
-              Resource:
-                'Fn::Join':
-                  - ''
-                  - - 'arn:aws:dynamodb:'
-                    - Ref: 'AWS::Region'
-                    - ':'
-                    - Ref: 'AWS::AccountId'
-                    - ':table/CertPolicyTable'
+        - CloudWatchPutMetricPolicy: {}
+        - DynamoDBCrudPolicy:
+            TableName:
+              Ref: CertPolicyTable
       Events:
         Schedule:
           Type: Schedule
