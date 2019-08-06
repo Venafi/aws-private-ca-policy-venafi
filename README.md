@@ -128,10 +128,28 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 
 ### Engineer instructions
 
-1. Open Venafi application page: https://eu-west-1.console.aws.amazon.com/lambda/home?region=eu-west-1#/create/app?applicationId=arn:aws:serverlessrepo:eu-west-1:497086895112:applications/aws-private-ca-policy-venafi
+1. Open Venafi application page: [aws-private-ca-policy-venafi](https://eu-west-1.console.aws.amazon.com/lambda/home?region=eu-west-1#/create/app?applicationId=arn:aws:serverlessrepo:eu-west-1:497086895112:applications/aws-private-ca-policy-venafi)
 
-1. Fill credentials parameters. 
+1. Fill credentials parameters. CLOUDAPIKEY (encrypted string from IAM administrator) for Venafi Cloud and TPPPASSWORD (encrypted string from IAM administrator),
+TPPURL,TPPUSER for the Platform
+
+1. Click Deploy button to deploy cloudformation stack
     
+1. Add a Venafi zone to the policy table so certificate policy will be fetched from Venafi:
+    ```bash
+    aws dynamodb put-item --table-name cert-policy --item '{"PolicyID": {"S":"Default"}}'
+    ```
+    
+1. To check the policy for the Venafi zone run:
+    ```bash
+    aws dynamodb get-item --table-name cert-policy --key '{"PolicyID": {"S":"Default"}}'
+    ```    
+    
+1. To get the address of the API Gateway run:
+    ```bash
+    aws cloudformation describe-stacks --stack-name private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue
+    ```    
+
 ## Instruction for developers
 
 ### AWS Configuration Steps:
