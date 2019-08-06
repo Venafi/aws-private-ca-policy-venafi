@@ -157,7 +157,7 @@ TPPURL,TPPUSER for the Platform
         
 1. Check pass-thru functionality:
     ```bash
-    URL=$(aws cloudformation describe-stacks --stack-name private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue)
+    URL=$(aws cloudformation describe-stacks --stack-name serverlessrepo-aws-private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue)
     aws acm-pca list-certificate-authorities --endpoint-url $URL
     ```    
 
