@@ -219,6 +219,14 @@ The Venafi certificate request Lambda can pass through requests from native AWS 
 aws acm-pca list-certificate-authorities --endpoint-url http://localhost:3000/request
 ``` 
 
+### Cleanup
+To delete deployed stack run:
+
+    ```bash
+    aws cloudformation delete-stack --stack-name serverlessrepo-aws-private-ca-policy-venafi
+    aws cloudformation wait stack-delete-complete --stack-name serverlessrepo-aws-private-ca-policy-venafi
+    ```
+
 ## License
 
 Copyright &copy; Venafi, Inc. All rights reserved.
