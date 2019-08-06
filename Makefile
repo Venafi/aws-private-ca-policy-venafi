@@ -85,6 +85,7 @@ sam_deploy_cloud:
         --region $(REGION) \
         --parameter-overrides CLOUDAPIKEY=$$CLOUDAPIKEY_ENC CLOUDURL=$$CLOUDURL
 	aws cloudformation wait stack-create-complete --stack-name $(STACK_NAME)
+	aws cloudformation describe-stacks --stack-name $(STACK_NAME)|jq .Stacks[].Outputs
 
 sam_deploy_tpp:
 	aws cloudformation deploy \
@@ -94,6 +95,7 @@ sam_deploy_tpp:
         --region $(REGION) \
         --parameter-overrides TPPUSER=$$TPPUSER,TPPURL=$$TPPURL,TPPPASSWORD=$$TPPPASSWORD_ENC
 	aws cloudformation wait stack-create-complete --stack-name $(STACK_NAME)
+	aws cloudformation describe-stacks --stack-name $(STACK_NAME)|jq .Stacks[].Outputs
 
 sam_delete:
 	aws cloudformation delete-stack --stack-name $(STACK_NAME)
