@@ -207,7 +207,21 @@ TPPURL,TPPUSER for the Platform
 ### Usage
 
 To determine request type proper "X-Amz-Target" header must be set.  
-TODO: List of headers here
+Here is the list of headers:
+  
+    "CertificateManager.DescribeCertificate"
+    "CertificateManager.ExportCertificate"
+    "CertificateManager.GetCertificate"
+    "CertificateManager.ListCertificates"
+    "CertificateManager.RenewCertificate"
+    
+    "ACMPrivateCA.GetCertificate"
+    "ACMPrivateCA.ListCertificateAuthorities"
+    "ACMPrivateCA.GetCertificateAuthorityCertificate"
+    "ACMPrivateCA.RevokeCertificate"
+    "CertificateManager.RequestCertificate"
+    "ACMPrivateCA.IssueCertificate"
+  
      
 #### Pass-Thru
 The Venafi certificate request Lambda can pass through requests from native AWS tools to ACM and ACMPCA. Just specify the `--endpoint-url` parameter with the URL where you published the API. For example:
