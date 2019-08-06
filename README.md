@@ -133,13 +133,18 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 1. Fill credentials parameters. CLOUDAPIKEY (encrypted string from IAM administrator) for Venafi Cloud and TPPPASSWORD (encrypted string from IAM administrator),
 TPPURL,TPPUSER for the Platform
 
-1. Click Deploy button to deploy cloudformation stack
+1. Click Deploy button to deploy cloudformation stack and wait untill deploy is finished.
     
 1. Add a Venafi zone to the policy table so certificate policy will be fetched from Venafi:
     ```bash
     aws dynamodb put-item --table-name cert-policy --item '{"PolicyID": {"S":"Default"}}'
     ```
-    
+
+1. Check the logs
+    ```bash
+    sam logs -n CertPolicyLambda --stack-name serverlessrepo-aws-private-ca-policy-venafi
+    sam logs -n CertRequestLambda --stack-name serverlessrepo-aws-private-ca-policy-venafi
+    ```    
 1. To check the policy for the Venafi zone run:
     ```bash
     aws dynamodb get-item --table-name cert-policy --key '{"PolicyID": {"S":"Default"}}'
@@ -148,6 +153,12 @@ TPPURL,TPPUSER for the Platform
 1. To get the address of the API Gateway run:
     ```bash
     aws cloudformation describe-stacks --stack-name private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue
+    ```    
+        
+1. Check pass-thru functionality:
+    ```bash
+    URL=$(aws cloudformation describe-stacks --stack-name private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue)
+    aws acm-pca list-certificate-authorities --endpoint-url $URL
     ```    
 
 ## Instruction for developers
@@ -183,27 +194,6 @@ TPPURL,TPPUSER for the Platform
         --patch-operations \
         op=replace,path=/policy,value=$(jq -c -a @text resource-policy.json)
     ``` 
-    
-1. Add a Venafi zone to the policy table so certificate policy will be fetched from Venafi:
-    ```bash
-    aws dynamodb put-item --table-name cert-policy --item '{"PolicyID": {"S":"Default"}}'
-    ```
-    
-1. To check the policy for the Venafi zone run:
-    ```bash
-    aws dynamodb get-item --table-name cert-policy --key '{"PolicyID": {"S":"Default"}}'
-    ```    
-    
-1. To get the address of the API Gateway run:
-    ```bash
-    aws cloudformation describe-stacks --stack-name private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue
-    ```    
-    
-1. Check pass-thru functionality:
-    ```bash
-    URL=$(aws cloudformation describe-stacks --stack-name private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue)
-    aws acm-pca list-certificate-authorities --endpoint-url $URL
-    ```    
 ### Usage
 
 To determine request type proper "X-Amz-Target" header must be set.  
@@ -228,6 +218,14 @@ The Venafi certificate request Lambda can pass through requests from native AWS 
 ```bash
 aws acm-pca list-certificate-authorities --endpoint-url http://localhost:3000/request
 ``` 
+
+### Cleanup
+To delete deployed stack run:
+
+    ```bash
+    aws cloudformation delete-stack --stack-name serverlessrepo-aws-private-ca-policy-venafi
+    aws cloudformation wait stack-delete-complete --stack-name serverlessrepo-aws-private-ca-policy-venafi
+    ```
 
 ## License
 
