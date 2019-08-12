@@ -1,0 +1,1 @@
+### Postman collection and environement with some example requests

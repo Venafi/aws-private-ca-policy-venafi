@@ -133,6 +133,8 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 1. Fill credentials parameters. CLOUDAPIKEY (encrypted string from IAM administrator) for Venafi Cloud and TPPPASSWORD (encrypted string from IAM administrator),
 TPPURL,TPPUSER for the Platform
 
+1. If you want to non existing policy from request will be saved to database add SAVE_POLICY_FROM_REQUEST with "true"
+ 
 1. Click Deploy button to deploy cloudformation stack and wait untill deploy is finished.
     
 1. Add a Venafi zone to the policy table so certificate policy will be fetched from Venafi:
