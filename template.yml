@@ -123,9 +123,6 @@ Resources:
       LogGroupName: !Join ['/', ['/aws/lambda', !Ref CertPolicyLambda]]
       RetentionInDays: 7 # days
 Outputs:
-  # This API creates a role and manages Venafi policies for enrolling certificates with an Amazon private CA.
-  # To find out more about implicit resources, you can review Serverless Application Model (SAM) that is generated.
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   CertRequestApi:
     Description: "API Gateway endpoint URL for Prod stage for Hello World function"
     Value: !Sub "https://${VenafiLambdaApi}.execute-api.${AWS::Region}.amazonaws.com/v1/request/"

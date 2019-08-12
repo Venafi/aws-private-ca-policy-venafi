@@ -14,6 +14,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/acmpca"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 )
 
 type venafiError string
@@ -112,11 +114,7 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 	}
 	policy, err := common.GetPolicy(certRequest.VenafiZone)
 	if err == common.PolicyNotFound {
-		err = common.CreateEmptyPolicy(certRequest.VenafiZone)
-		if err != nil {
-			return clientError(http.StatusFailedDependency, err.Error())
-		}
-		return clientError(http.StatusFailedDependency, fmt.Sprintf("Policy not exist in database. Policy creation is scheduled in policy lambda"))
+		return handlePolcyNotFound(certRequest.VenafiZone)
 	} else if err != nil {
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed to get policy from database: %s", err))
 	}
@@ -169,11 +167,7 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 	}
 	policy, err := common.GetPolicy(certRequest.VenafiZone)
 	if err == common.PolicyNotFound {
-		err = common.CreateEmptyPolicy(certRequest.VenafiZone)
-		if err != nil {
-			fmt.Println("Error creating policy", err)
-		}
-		return clientError(http.StatusFailedDependency, fmt.Sprintf("Policy not exist in database. Policy creation is scheduled in policy lambda"))
+		return handlePolcyNotFound(certRequest.VenafiZone)
 	} else if err != nil {
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed to get policy from database: %s", err))
 	}
@@ -203,6 +197,26 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 		Body:       string(respoBodyJSON),
 		StatusCode: http.StatusOK,
 	}, nil
+}
+
+func handlePolcyNotFound(venafiZone string) (events.APIGatewayProxyResponse, error) {
+	savePolicyEnv := os.Getenv("SAVE_POLICY_FROM_REQUEST")
+	if savePolicyEnv == "" {
+		savePolicyEnv = "false"
+	}
+	savePolicy, err := strconv.ParseBool(savePolicyEnv)
+	if err != nil {
+		return clientError(http.StatusBadRequest, fmt.Sprintf("Can't parse SAVE_POLICY_FROM_REQUEST variable: %s", err))
+	}
+	if savePolicy {
+		err = common.CreateEmptyPolicy(venafiZone)
+		if err != nil {
+			return clientError(http.StatusFailedDependency, err.Error())
+		}
+		return clientError(http.StatusFailedDependency, fmt.Sprintf("Policy not exist in database. Policy creation is scheduled in policy lambda"))
+	} else {
+		return clientError(http.StatusFailedDependency, fmt.Sprintf("Policy not exist in database."))
+	}
 }
 
 func clientError(status int, body string) (events.APIGatewayProxyResponse, error) {
