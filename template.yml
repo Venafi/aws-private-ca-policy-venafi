@@ -33,6 +33,9 @@ Parameters:
     NoEcho : "true"
     Default: ""
     Type: String
+  SAVE_POLICY_FROM_REQUEST:
+    Default: "false"
+    Type: String
 
 Resources:
   VenafiLambdaApi:
@@ -54,6 +57,9 @@ Resources:
       Timeout: 10
       #TODO: provide json for creating a role
       Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/lambda-venafi-role'
+      Environment:
+        Variables:
+          SAVE_POLICY_FROM_REQUEST: !Ref  SAVE_POLICY_FROM_REQUEST
       Policies:
         - CloudWatchPutMetricPolicy: {}
         - DynamoDBCrudPolicy:
