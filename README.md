@@ -144,8 +144,8 @@ TPPURL,TPPUSER for the Platform
 
 1. Check the logs
     ```bash
-    sam logs -n CertPolicyLambda --stack-name serverlessrepo-aws-private-ca-policy-venafi
-    sam logs -n CertRequestLambda --stack-name serverlessrepo-aws-private-ca-policy-venafi
+    sam logs -n VenafiCertPolicyLambda --stack-name serverlessrepo-aws-private-ca-policy-venafi
+    sam logs -n VenafiCertRequestLambda --stack-name serverlessrepo-aws-private-ca-policy-venafi
     ```    
 1. To check the policy for the Venafi zone run:
     ```bash

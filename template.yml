@@ -46,7 +46,7 @@ Resources:
         DefaultAuthorizer: AWS_IAM
         InvokeRole: !Sub 'arn:aws:iam::${AWS::AccountId}:role/lambda-venafi-role'
 
-  CertRequestLambda:
+  VenafiCertRequestLambda:
     Type: 'AWS::Serverless::Function'
     Properties:
       Handler: cert-request
@@ -75,7 +75,7 @@ Resources:
             Auth:
               Authorizer: AWS_IAM
 
-  CertPolicyLambda:
+  VenafiCertPolicyLambda:
     Type: 'AWS::Serverless::Function'
     Properties:
       Handler: cert-policy
@@ -120,13 +120,13 @@ Resources:
   RequestLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda', !Ref CertRequestLambda]]
+      LogGroupName: !Join ['/', ['/aws/lambda', !Ref VenafiCertRequestLambda]]
       RetentionInDays: 7 # days
 
   PolicyLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda', !Ref CertPolicyLambda]]
+      LogGroupName: !Join ['/', ['/aws/lambda', !Ref VenafiCertPolicyLambda]]
       RetentionInDays: 7 # days
 Outputs:
   CertRequestApi:
