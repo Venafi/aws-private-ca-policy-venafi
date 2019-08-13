@@ -139,7 +139,7 @@ TPPURL,TPPUSER for the Platform
     
 1. Add a Venafi zone to the policy table so certificate policy will be fetched from Venafi:
     ```bash
-    aws dynamodb put-item --table-name cert-policy --item '{"PolicyID": {"S":"Default"}}'
+    aws dynamodb put-item --table-name VenafiCertPolicy --item '{"PolicyID": {"S":"Default"}}'
     ```
 
 1. Check the logs
@@ -149,7 +149,7 @@ TPPURL,TPPUSER for the Platform
     ```    
 1. To check the policy for the Venafi zone run:
     ```bash
-    aws dynamodb get-item --table-name cert-policy --key '{"PolicyID": {"S":"Default"}}'
+    aws dynamodb get-item --table-name VenafiCertPolicy --key '{"PolicyID": {"S":"Default"}}'
     ```    
     
 1. To get the address of the API Gateway run:

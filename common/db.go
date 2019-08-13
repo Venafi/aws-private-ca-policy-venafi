@@ -26,7 +26,7 @@ const PolicyFoundButEmpty venafiError = "policy found but empty"
 func init() {
 	tableName = os.Getenv("DYNAMODB_ZONES_TABLE")
 	if tableName == "" {
-		tableName = "cert-policy"
+		tableName = "VenafiCertPolicy"
 	}
 	cfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {

@@ -106,7 +106,7 @@ Resources:
   CertPolicyTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
-      TableName: cert-policy
+      TableName: VenafiCertPolicy
       AttributeDefinitions:
         - AttributeName: PolicyID
           AttributeType: S
