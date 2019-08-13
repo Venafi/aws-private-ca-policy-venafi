@@ -15,7 +15,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 )
 
 type venafiError string
@@ -25,14 +24,14 @@ func (e venafiError) Error() string {
 }
 
 const (
-	acmRequestCertificate  = "CertificateManager.RequestCertificate"
-	acmpcaIssueCertificate = "ACMPrivateCA.IssueCertificate"
-	//TODO: make zone configurable
-	defaultZone = "Default"
+	acmRequestCertificate  = "CertificateManagerRequestCertificate"
+	acmpcaIssueCertificate = "ACMPrivateCAIssueCertificate"
 
 	// ErrNameNotProvided is thrown when a name is not provided
 	ErrNameNotProvided venafiError = "no name was provided in the HTTP body"
 )
+
+var defaultZone = "Default"
 
 type ACMPCAIssueCertificateRequest struct {
 	acmpca.IssueCertificateInput
@@ -59,34 +58,20 @@ type ACMPCAGetCertificateResponse struct {
 func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 
 	ctx := context.TODO()
-
-	log.Println("ACMPCAHandler started. Parsing header", request.Headers["X-Amz-Target"])
-	switch request.Headers["X-Amz-Target"] {
+	target := request.Headers["X-Amz-Target"]
+	log.Println("ACMPCAHandler started. Parsing header", target)
+	switch target {
 	case acmpcaIssueCertificate:
 		return venafiACMPCAIssueCertificateRequest(request)
 	case acmRequestCertificate:
 		return venafiACMRequestCertificate(request)
-	case acmDescribeCertificate:
-		return passThru(request, ctx, acmDescribeCertificate)
-	case acmExportCertificate:
-		return passThru(request, ctx, acmExportCertificate)
-	case acmGetCertificate:
-		return passThru(request, ctx, acmGetCertificate)
-	case acmListCertificates:
-		return passThru(request, ctx, acmListCertificates)
-	case acmRenewCertificate:
-		return passThru(request, ctx, acmRenewCertificate)
-	case acmpcaGetCertificate:
-		return passThru(request, ctx, acmpcaGetCertificate)
-	case acmpcaGetCertificateAuthorityCertificate:
-		return passThru(request, ctx, acmpcaGetCertificateAuthorityCertificate)
-	case acmpcaListCertificateAuthorities:
-		return passThru(request, ctx, acmpcaListCertificateAuthorities)
-	case acmpcaRevokeCertificate:
-		return passThru(request, ctx, acmpcaRevokeCertificate)
-
+	case acmDescribeCertificate, acmExportCertificate, acmGetCertificate, acmListCertificates, acmRenewCertificate,
+		acmpcaGetCertificate, acmpcaGetCertificateAuthorityCertificate, acmpcaListCertificateAuthorities,
+		acmpcaRevokeCertificate:
+		return passThru(request, ctx, target)
 	default:
-		return clientError(http.StatusMethodNotAllowed, fmt.Sprintf("Can't determine requested method for header: %s", request.Headers["X-Amz-Target"]))
+		log.Println("Can't determine requested method for header: ", target)
+		return clientError(http.StatusMethodNotAllowed, fmt.Sprintf("Can't determine requested method for header: %s", target))
 	}
 
 }
@@ -108,6 +93,7 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 	if err != nil {
 		return clientError(http.StatusUnprocessableEntity, "Can't parse certificate request")
 	}
+	//TODO: add SigningAlgorithm validation
 
 	if certRequest.VenafiZone == "" {
 		certRequest.VenafiZone = defaultZone
@@ -150,11 +136,12 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 }
 
 func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	log.Println("Starting RequestCertificate")
 	ctx := context.TODO()
-
 	var certRequest VenafiRequestCertificateInput
 	err := json.Unmarshal([]byte(request.Body), &certRequest)
 	if err != nil {
+		log.Println(err)
 		return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Error unmarshaling JSON: %s", err))
 	}
 
@@ -169,15 +156,18 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 	if err == common.PolicyNotFound {
 		return handlePolcyNotFound(certRequest.VenafiZone)
 	} else if err != nil {
+		log.Println(err)
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed to get policy from database: %s", err))
 	}
 	err = policy.SimpleValidateCertificateRequest(req)
 	if err != nil {
+		log.Println(err)
 		return clientError(http.StatusForbidden, err.Error())
 	}
 	awsCfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
-		fmt.Println("Error loading client", err)
+		log.Println("Error loading client", err)
+		return clientError(http.StatusInternalServerError, fmt.Sprintf("Can`t load client config: %v", err))
 	}
 	acmCli := acm.New(awsCfg)
 
@@ -185,11 +175,13 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 
 	certResp, err := caReqInput.Send(ctx)
 	if err != nil {
+		log.Println(err)
 		return clientError(http.StatusInternalServerError, fmt.Sprintf("Could not get certificate response: %s", err))
 	}
 
 	respoBodyJSON, err := json.Marshal(certResp)
 	if err != nil {
+		log.Println(err)
 		return clientError(http.StatusUnprocessableEntity, fmt.Sprintf("Error marshaling response JSON: %s", err))
 	}
 
@@ -200,23 +192,16 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 }
 
 func handlePolcyNotFound(venafiZone string) (events.APIGatewayProxyResponse, error) {
-	savePolicyEnv := os.Getenv("SAVE_POLICY_FROM_REQUEST")
-	if savePolicyEnv == "" {
-		savePolicyEnv = "false"
-	}
-	savePolicy, err := strconv.ParseBool(savePolicyEnv)
-	if err != nil {
-		return clientError(http.StatusBadRequest, fmt.Sprintf("Can't parse SAVE_POLICY_FROM_REQUEST variable: %s", err))
-	}
-	if savePolicy {
-		err = common.CreateEmptyPolicy(venafiZone)
-		if err != nil {
-			return clientError(http.StatusFailedDependency, err.Error())
-		}
-		return clientError(http.StatusFailedDependency, fmt.Sprintf("Policy not exist in database. Policy creation is scheduled in policy lambda"))
-	} else {
+	savePolicy := os.Getenv("SAVE_POLICY_FROM_REQUEST") == "true"
+	if !savePolicy {
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Policy not exist in database."))
 	}
+	err := common.CreateEmptyPolicy(venafiZone)
+	if err != nil {
+		return clientError(http.StatusFailedDependency, err.Error())
+	}
+	return clientError(http.StatusFailedDependency, fmt.Sprintf("Policy not exist in database. Policy creation is scheduled in policy lambda"))
+
 }
 
 func clientError(status int, body string) (events.APIGatewayProxyResponse, error) {
@@ -232,6 +217,13 @@ func clientError(status int, body string) (events.APIGatewayProxyResponse, error
 		StatusCode: status,
 		Body:       string(b),
 	}, nil
+}
+
+func init() {
+	d := os.Getenv("DEFAULT_ZONE")
+	if d != "" {
+		defaultZone = d
+	}
 }
 
 func main() {

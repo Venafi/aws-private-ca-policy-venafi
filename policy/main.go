@@ -75,6 +75,7 @@ func kmsDecrypt(encrypted string) (string, error) {
 	}
 	return string(result.Plaintext[:]), nil
 }
+
 func main() {
 	log.Println("Starting policy lambda.")
 	var err error
