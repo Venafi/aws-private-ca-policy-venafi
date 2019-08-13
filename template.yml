@@ -8,7 +8,7 @@ Metadata:
     Description: (UNDER DEVELOPMENT) Venafi Lambda functions for AWS that enforce enterprise security policy for the AWS Private CA.
     Author: Venafi
     SpdxLicenseId: Apache-2.0
-    LicenseUrl: LICENSE.txt
+    LicenseUrl: LICENSE
     ReadmeUrl: README.md
     Labels: ['tls','ssl','certificates','aws-certificate-manager','venafi-platform','venafi-cloud']
     HomePageUrl: https://github.com/Venafi/aws-private-ca-policy-venafi
@@ -33,7 +33,7 @@ Parameters:
     NoEcho : "true"
     Default: ""
     Type: String
-  SAVE_POLICY_FROM_REQUEST:
+  SAVEPOLICYFROMREQUEST:
     Default: "false"
     Type: String
 
@@ -44,9 +44,9 @@ Resources:
       StageName: v1
       Auth:
         DefaultAuthorizer: AWS_IAM
-        InvokeRole: !Sub 'arn:aws:iam::${AWS::AccountId}:role/lambda-venafi-role'
+        InvokeRole: !Sub 'arn:aws:iam::${AWS::AccountId}:role/VenafiLambda'
 
-  CertRequestLambda:
+  VenafiCertRequestLambda:
     Type: 'AWS::Serverless::Function'
     Properties:
       Handler: cert-request
@@ -56,10 +56,10 @@ Resources:
       MemorySize: 512
       Timeout: 10
       #TODO: provide json for creating a role
-      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/lambda-venafi-role'
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/VenafiLambda'
       Environment:
         Variables:
-          SAVE_POLICY_FROM_REQUEST: !Ref  SAVE_POLICY_FROM_REQUEST
+          SAVE_POLICY_FROM_REQUEST: !Ref  SAVEPOLICYFROMREQUEST
       Policies:
         - CloudWatchPutMetricPolicy: {}
         - DynamoDBCrudPolicy:
@@ -75,7 +75,7 @@ Resources:
             Auth:
               Authorizer: AWS_IAM
 
-  CertPolicyLambda:
+  VenafiCertPolicyLambda:
     Type: 'AWS::Serverless::Function'
     Properties:
       Handler: cert-policy
@@ -84,7 +84,7 @@ Resources:
       Description: Venfi policy with a RESTful API endpoint using Amazon API Gateway.
       MemorySize: 512
       Timeout: 10
-      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/lambda-venafi-role'
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/VenafiLambda'
       Environment:
         Variables:
           TPPUSER: !Ref  TPPUSER
@@ -106,7 +106,7 @@ Resources:
   CertPolicyTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
-      TableName: cert-policy
+      TableName: VenafiCertPolicy
       AttributeDefinitions:
         - AttributeName: PolicyID
           AttributeType: S
@@ -120,13 +120,13 @@ Resources:
   RequestLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda', !Ref CertRequestLambda]]
+      LogGroupName: !Join ['/', ['/aws/lambda', !Ref VenafiCertRequestLambda]]
       RetentionInDays: 7 # days
 
   PolicyLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['/', ['/aws/lambda', !Ref CertPolicyLambda]]
+      LogGroupName: !Join ['/', ['/aws/lambda', !Ref VenafiCertPolicyLambda]]
       RetentionInDays: 7 # days
 Outputs:
   CertRequestApi:

@@ -53,14 +53,13 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 ### Setup Lambda role and KMS key for credentials encryption
 
 ### IAM Administrator instructions
-1. Create a role for Venafi lambda execution
+1. Create a policy for Venafi lambda role (you may want to edit and review policy document before creation)
+    ```bash
+    aws iam create-policy --policy-name VenafiLambdaAccess --policy-document file://venafi-lambda-policy.json
     ```
-    aws iam create-role --role-name lambda-venafi-role
-    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess    
-    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
-    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AWSCertificateManagerPrivateCAUser
-    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AWSKeyManagementServicePowerUser
-    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AWSCertificateManagerFullAccess
+1. Create a role for Venafi lambda execution
+    ```bash
+    aws iam create-role --role-name VenafiLambda --assume-role-policy-document file://venafi-lambda-policy.json
     ```
 1. Setup KMS
 
@@ -72,7 +71,7 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
     ```
 - Create key policy for venafi lambda:
     ```bash
-    LAMBDA_ROLE_ARN=$(aws iam get-role --role-name lambda-venafi-role|jq -r .Role.Arn)
+    LAMBDA_ROLE_ARN=$(aws iam get-role --role-name VenafiLambda|jq -r .Role.Arn)
     KMS_KEY_ARN=$(aws kms describe-key --key-id alias/venafi-encryption-key|jq .KeyMetadata.Arn)
     ACC_ID=$(aws sts  get-caller-identity|jq -r .Account)
     cat << EOF > key-policy.json
@@ -139,17 +138,17 @@ TPPURL,TPPUSER for the Platform
     
 1. Add a Venafi zone to the policy table so certificate policy will be fetched from Venafi:
     ```bash
-    aws dynamodb put-item --table-name cert-policy --item '{"PolicyID": {"S":"Default"}}'
+    aws dynamodb put-item --table-name VenafiCertPolicy --item '{"PolicyID": {"S":"Default"}}'
     ```
 
 1. Check the logs
     ```bash
-    sam logs -n CertPolicyLambda --stack-name serverlessrepo-aws-private-ca-policy-venafi
-    sam logs -n CertRequestLambda --stack-name serverlessrepo-aws-private-ca-policy-venafi
+    sam logs -n VenafiCertPolicyLambda --stack-name serverlessrepo-aws-private-ca-policy-venafi
+    sam logs -n VenafiCertRequestLambda --stack-name serverlessrepo-aws-private-ca-policy-venafi
     ```    
 1. To check the policy for the Venafi zone run:
     ```bash
-    aws dynamodb get-item --table-name cert-policy --key '{"PolicyID": {"S":"Default"}}'
+    aws dynamodb get-item --table-name VenafiCertPolicy --key '{"PolicyID": {"S":"Default"}}'
     ```    
     
 1. To get the address of the API Gateway run:
