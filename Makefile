@@ -1,10 +1,10 @@
 CERT_REQUEST_NAME := cert-request
-CERT_REQUEST_LAMBDA_NAME := CertRequestLambda
+CERT_REQUEST_LAMBDA_NAME := VenafiCertRequestLambda
 CERT_REQUEST_DEPLOYED_LAMBDA_NAME := $$(aws lambda list-functions |jq -r '.Functions[].FunctionName|select(.| contains("$(CERT_REQUEST_LAMBDA_NAME)"))')
 CERT_REQUEST_VERSION := 0.0.1
 
 CERT_POLICY_NAME := cert-policy
-CERT_POLICY_LAMBDA_NAME := CertPolicyLambda
+CERT_POLICY_LAMBDA_NAME := VenafiCertPolicyLambda
 CERT_POLICY_DEPLOYED_LAMBDA_NAME := $$(aws lambda list-functions |jq -r '.Functions[].FunctionName|select(.| contains("$(CERT_POLICY_LAMBDA_NAME)"))')
 CERT_POLICY_VERSION := 0.0.1
 
@@ -22,7 +22,7 @@ test:
 	go test $(TEST) $(TESTARGS)  -v -cover -timeout=$(TEST_TIMEOUT) -parallel=20
 
 sam_local_invoke:
-	for e in `ls fixtures/events/*-event.json`; do sam local invoke CertRequestLambda -e $$e; done
+	for e in `ls fixtures/events/*-event.json`; do sam local invoke VenafiCertRequestLambda -e $$e; done
 
 build: build_request build_policy
 
@@ -37,7 +37,7 @@ deploy_request:
 	zip dist/$(CERT_REQUEST_NAME)/$(CERT_REQUEST_NAME).zip dist/$(CERT_REQUEST_NAME)/$(CERT_REQUEST_NAME)
 	aws lambda delete-function --function-name $(CERT_REQUEST_NAME) || echo "Function doesn't exists"
 	aws lambda create-function --function-name $(CERT_REQUEST_NAME) --runtime go1.x \
-	--role arn:aws:iam::$(ACC_ID):role/lambda-venafi-role \
+	--role arn:aws:iam::$(ACC_ID):role/VenafiLambda \
 	--handler $(CERT_REQUEST_NAME) --zip-file fileb://dist/$(CERT_REQUEST_NAME).zip
 
 cloudformation_request:
@@ -64,7 +64,7 @@ deploy_policy:
 	zip dist/$(CERT_POLICY_NAME)/$(CERT_POLICY_NAME).zip dist/$(CERT_POLICY_NAME)/$(CERT_POLICY_NAME)
 	aws lambda delete-function --function-name $(CERT_POLICY_NAME) || echo "Function doesn't exists"
 	aws lambda create-function --function-name $(CERT_POLICY_NAME) --runtime go1.x \
-	--role arn:aws:iam::$(ACC_ID):role/lambda-venafi-role \
+	--role arn:aws:iam::$(ACC_ID):role/VenafiLambda \
 	--handler $(CERT_POLICY_NAME) --zip-file fileb://dist/$(CERT_POLICY_NAME).zip
 
 update_policy_code:
