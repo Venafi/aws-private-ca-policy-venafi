@@ -53,14 +53,13 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 ### Setup Lambda role and KMS key for credentials encryption
 
 ### IAM Administrator instructions
-1. Create a role for Venafi lambda execution
+1. Create a policy for Venafi lambda role (you may want to edit and review policy document before creation)
+    ```bash
+    aws iam create-policy --policy-name VenafiLambdaAccess --policy-document file://venafi-lambda-policy.json
     ```
-    aws iam create-role --role-name lambda-venafi-role
-    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess    
-    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
-    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AWSCertificateManagerPrivateCAUser
-    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AWSKeyManagementServicePowerUser
-    aws iam attach-role-policy --role-name lambda-venafi-role --policy-arn arn:aws:iam::aws:policy/AWSCertificateManagerFullAccess
+1. Create a role for Venafi lambda execution
+    ```bash
+    aws iam create-role --role-name VenafiLambda --assume-role-policy-document file://venafi-lambda-policy.json
     ```
 1. Setup KMS
 
@@ -72,7 +71,7 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
     ```
 - Create key policy for venafi lambda:
     ```bash
-    LAMBDA_ROLE_ARN=$(aws iam get-role --role-name lambda-venafi-role|jq -r .Role.Arn)
+    LAMBDA_ROLE_ARN=$(aws iam get-role --role-name VenafiLambda|jq -r .Role.Arn)
     KMS_KEY_ARN=$(aws kms describe-key --key-id alias/venafi-encryption-key|jq .KeyMetadata.Arn)
     ACC_ID=$(aws sts  get-caller-identity|jq -r .Account)
     cat << EOF > key-policy.json

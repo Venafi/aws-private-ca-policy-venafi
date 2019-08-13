@@ -37,7 +37,7 @@ deploy_request:
 	zip dist/$(CERT_REQUEST_NAME)/$(CERT_REQUEST_NAME).zip dist/$(CERT_REQUEST_NAME)/$(CERT_REQUEST_NAME)
 	aws lambda delete-function --function-name $(CERT_REQUEST_NAME) || echo "Function doesn't exists"
 	aws lambda create-function --function-name $(CERT_REQUEST_NAME) --runtime go1.x \
-	--role arn:aws:iam::$(ACC_ID):role/lambda-venafi-role \
+	--role arn:aws:iam::$(ACC_ID):role/VenafiLambda \
 	--handler $(CERT_REQUEST_NAME) --zip-file fileb://dist/$(CERT_REQUEST_NAME).zip
 
 cloudformation_request:
@@ -64,7 +64,7 @@ deploy_policy:
 	zip dist/$(CERT_POLICY_NAME)/$(CERT_POLICY_NAME).zip dist/$(CERT_POLICY_NAME)/$(CERT_POLICY_NAME)
 	aws lambda delete-function --function-name $(CERT_POLICY_NAME) || echo "Function doesn't exists"
 	aws lambda create-function --function-name $(CERT_POLICY_NAME) --runtime go1.x \
-	--role arn:aws:iam::$(ACC_ID):role/lambda-venafi-role \
+	--role arn:aws:iam::$(ACC_ID):role/VenafiLambda \
 	--handler $(CERT_POLICY_NAME) --zip-file fileb://dist/$(CERT_POLICY_NAME).zip
 
 update_policy_code:
