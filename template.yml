@@ -36,6 +36,9 @@ Parameters:
   SAVE_POLICY_FROM_REQUEST:
     Default: "false"
     Type: String
+  DEFAULT_ZONE:
+    Default: "Default"
+    Type: String
 
 Resources:
   VenafiLambdaApi:
@@ -60,6 +63,7 @@ Resources:
       Environment:
         Variables:
           SAVE_POLICY_FROM_REQUEST: !Ref  SAVE_POLICY_FROM_REQUEST
+          DEFAULT_ZONE: !Ref DEFAULT_ZONE
       Policies:
         - CloudWatchPutMetricPolicy: {}
         - DynamoDBCrudPolicy:

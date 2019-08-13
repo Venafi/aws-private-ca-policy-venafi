@@ -12,16 +12,16 @@ import (
 )
 
 const (
-	acmDescribeCertificate = "CertificateManager.DescribeCertificate"
-	acmExportCertificate   = "CertificateManager.ExportCertificate"
-	acmGetCertificate      = "CertificateManager.GetCertificate"
-	acmListCertificates    = "CertificateManager.ListCertificates"
-	acmRenewCertificate    = "CertificateManager.RenewCertificate"
+	acmDescribeCertificate = "CertificateManagerDescribeCertificate"
+	acmExportCertificate   = "CertificateManagerExportCertificate"
+	acmGetCertificate      = "CertificateManagerGetCertificate"
+	acmListCertificates    = "CertificateManagerListCertificates"
+	acmRenewCertificate    = "CertificateManagerRenewCertificate"
 
-	acmpcaGetCertificate                     = "ACMPrivateCA.GetCertificate"
-	acmpcaListCertificateAuthorities         = "ACMPrivateCA.ListCertificateAuthorities"
-	acmpcaGetCertificateAuthorityCertificate = "ACMPrivateCA.GetCertificateAuthorityCertificate"
-	acmpcaRevokeCertificate                  = "ACMPrivateCA.RevokeCertificate"
+	acmpcaGetCertificate                     = "ACMPrivateCAGetCertificate"
+	acmpcaListCertificateAuthorities         = "ACMPrivateCAListCertificateAuthorities"
+	acmpcaGetCertificateAuthorityCertificate = "ACMPrivateCAGetCertificateAuthorityCertificate"
+	acmpcaRevokeCertificate                  = "ACMPrivateCARevokeCertificate"
 )
 
 const (
