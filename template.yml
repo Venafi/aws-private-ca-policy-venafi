@@ -33,7 +33,7 @@ Parameters:
     NoEcho : "true"
     Default: ""
     Type: String
-  SAVE_POLICY_FROM_REQUEST:
+  SAVEPOLICYFROMREQUEST:
     Default: "false"
     Type: String
 
@@ -59,7 +59,7 @@ Resources:
       Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/VenafiLambda'
       Environment:
         Variables:
-          SAVE_POLICY_FROM_REQUEST: !Ref  SAVE_POLICY_FROM_REQUEST
+          SAVE_POLICY_FROM_REQUEST: !Ref  SAVEPOLICYFROMREQUEST
       Policies:
         - CloudWatchPutMetricPolicy: {}
         - DynamoDBCrudPolicy:
