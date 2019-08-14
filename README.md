@@ -197,28 +197,21 @@ TPPURL,TPPUSER for the Platform
     ``` 
 ### Usage
 
-To determine request type proper "X-Amz-Target" header must be set.  
-Here is the list of headers:
-  
-    "CertificateManager.DescribeCertificate"
-    "CertificateManager.ExportCertificate"
-    "CertificateManager.GetCertificate"
-    "CertificateManager.ListCertificates"
-    "CertificateManager.RenewCertificate"
-    
-    "ACMPrivateCA.GetCertificate"
-    "ACMPrivateCA.ListCertificateAuthorities"
-    "ACMPrivateCA.GetCertificateAuthorityCertificate"
-    "ACMPrivateCA.RevokeCertificate"
-    "CertificateManager.RequestCertificate"
-    "ACMPrivateCA.IssueCertificate"
-  
+New api is very similar to official Amazon ACM api. Example code for usage api can be find in [example file](client-example/cli.py).
+
+You can request certificate from ACM.
+```bash
+./cli.py request --domain "example.example.com" --base-url "https://cdvq35y9o2.execute-api.eu-west-1.amazonaws.com/v1/request" --policy Default
+```
+Or sign you CSR with ACMPCA.
+```bash
+python3 client-example/cli.py issue --csr-path "/home/user/csr.pem" --base-url "https://cdvq35y9o2.execute-api.eu-west-1.amazonaws.com/v1/request" --policy Default --arn "arn:aws:acm-pca:eu-west-1:497086895112:certificate-authority/cadaae4b-26c7-4c57-9ba1-f00d4e20beb2"
+```
      
 #### Pass-Thru
-The Venafi certificate request Lambda can pass through requests from native AWS tools to ACM and ACMPCA. Just specify the `--endpoint-url` parameter with the URL where you published the API. For example:
-```bash
-aws acm-pca list-certificate-authorities --endpoint-url http://localhost:3000/request
-``` 
+The Venafi certificate request Lambda can pass through requests from native AWS tools to ACM and ACMPCA. 
+You can see example code in [example file](client-example/cli.py).
+It\`s similar to Amazon official api - you just need to remove dot from command name in `X-Amz-Target` header. For example `ACMPrivateCA.GetCertificate` transforms to `ACMPrivateCAGetCertificate`.
 
 ### Cleanup
 To delete deployed stack run:
