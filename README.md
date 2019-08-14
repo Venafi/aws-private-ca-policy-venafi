@@ -127,12 +127,16 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 
 ### Engineer instructions
 
-1. Open Venafi application page: [aws-private-ca-policy-venafi](https://eu-west-1.console.aws.amazon.com/lambda/home?region=eu-west-1#/create/app?applicationId=arn:aws:serverlessrepo:eu-west-1:497086895112:applications/aws-private-ca-policy-venafi)
+1. Go to available application page and choose private application tab: https://eu-west-1.console.aws.amazon.com/serverlessrepo/home?region=eu-west-1#/available-applications
+
+1. Find aws-private-ca-policy-venafi application and open it
 
 1. Fill credentials parameters. CLOUDAPIKEY (encrypted string from IAM administrator) for Venafi Cloud and TPPPASSWORD (encrypted string from IAM administrator),
 TPPURL,TPPUSER for the Platform
 
-1. If you want to non existing policy from request will be saved to database add SAVE_POLICY_FROM_REQUEST with "true"
+1. If you want to non existing policy from request will be saved to database change SAVEPOLICYFROMREQUEST to "true"
+
+1. Change default zone parameter DEFAULTZONE
  
 1. Click Deploy button to deploy cloudformation stack and wait untill deploy is finished.
     

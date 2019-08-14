@@ -36,7 +36,7 @@ Parameters:
   SAVEPOLICYFROMREQUEST:
     Default: "false"
     Type: String
-  DEFAULT_ZONE:
+  DEFAULTZONE:
     Default: "Default"
     Type: String
 
@@ -63,7 +63,7 @@ Resources:
       Environment:
         Variables:
           SAVE_POLICY_FROM_REQUEST: !Ref  SAVEPOLICYFROMREQUEST
-          DEFAULT_ZONE: !Ref DEFAULT_ZONE
+          DEFAULT_ZONE: !Ref DEFAULTZONE
       Policies:
         - CloudWatchPutMetricPolicy: {}
         - DynamoDBCrudPolicy:
