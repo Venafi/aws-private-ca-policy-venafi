@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"github.com/Venafi/aws-private-ca-policy-venafi/common"
 	"github.com/Venafi/vcert"
 	"github.com/Venafi/vcert/pkg/endpoint"
@@ -21,7 +20,7 @@ func HandleRequest() error {
 	log.Println("Getting policies")
 	names, err := common.GetAllPoliciesNames()
 	if err != nil {
-		fmt.Println(err)
+		log.Println("getting policies names error:", err)
 		return err
 	}
 	for _, name := range names {
@@ -32,20 +31,20 @@ func HandleRequest() error {
 			log.Printf("Policy %s not found. Deleting.", name)
 			err = common.DeletePolicy(name)
 			if err != nil {
-				return err
+				log.Println("delete policy error:", err)
 			}
 			continue
 		} else if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return err
 		}
 		log.Printf("Saving policy %s", name)
 		err = common.SavePolicy(name, *p)
 		if err != nil {
-			fmt.Println(err)
-			return err
+			log.Println("save policy error:", err)
 		}
 	}
+	log.Println("success policies processing")
 	return nil
 }
 
@@ -60,6 +59,7 @@ func kmsDecrypt(encrypted string) (string, error) {
 	}
 	cfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
+		log.Println("can`t load aws config", err)
 		return "", err
 	}
 
@@ -71,6 +71,7 @@ func kmsDecrypt(encrypted string) (string, error) {
 	req := svc.DecryptRequest(input)
 	result, err := req.Send(context.Background())
 	if err != nil {
+		log.Println("can`t decrypt", encrypted, ":", err)
 		return "", err
 	}
 	return string(result.Plaintext[:]), nil
@@ -88,12 +89,12 @@ func main() {
 		var err error
 		apiKey, err = kmsDecrypt(apiKey)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			os.Exit(1)
 		}
 		password, err = kmsDecrypt(password)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			os.Exit(1)
 		}
 	}
@@ -107,7 +108,7 @@ func main() {
 		os.Getenv("TRUST_BUNDLE"),
 	)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		os.Exit(1)
 	}
 	lambda.Start(HandleRequest)
