@@ -53,14 +53,6 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 ### Setup Lambda role and KMS key for credentials encryption
 
 ### IAM Administrator instructions
-1. Create a policy for Venafi lambda role (you may want to edit and review policy document before creation)
-    ```bash
-    aws iam create-policy --policy-name VenafiLambdaAccess --policy-document file://venafi-lambda-policy.json
-    ```
-1. Create a role for Venafi lambda execution
-    ```bash
-    aws iam create-role --role-name VenafiLambda --assume-role-policy-document file://venafi-lambda-policy.json
-    ```
 1. Setup KMS
 
 - Create KMS key for encryption (if you already have KMS key you can skip this step). Please review KMS documentation for more options: https://docs.aws.amazon.com/cli/latest/reference/kms/index.html  
@@ -71,9 +63,9 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
     ```
 - Create key policy for venafi lambda:
     ```bash
-    LAMBDA_ROLE_ARN=$(aws iam get-role --role-name VenafiLambda|jq -r .Role.Arn)
     KMS_KEY_ARN=$(aws kms describe-key --key-id alias/venafi-encryption-key|jq .KeyMetadata.Arn)
     ACC_ID=$(aws sts  get-caller-identity|jq -r .Account)
+    LAMBDA_ROLE_ARN="arn:aws:iam::${ACC_ID}:role/VenafiLambda"
     cat << EOF > key-policy.json
     {
       "Version" : "2012-10-17",
@@ -125,14 +117,27 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 
 - Pass this encrypted string to engineer who will deploy lambda
 
+1. Review lambda policy file venafi-lambda-policy.json Change "your-key-id-here" to the KMS KEY_ID
+
+
+1. Create a role for Venafi lambda execution and attach policy to it
+    ```bash
+    aws iam create-role --role-name VenafiLambda --assume-role-policy-document file://role-venafi-lambda.json
+    aws iam put-role-policy --role-name VenafiLambda --policy-name VenafiLambdaPolicy --policy-document file://venafi-lambda-policy.json
+    ```
+
 ### Engineer instructions
 
-1. Open Venafi application page: [aws-private-ca-policy-venafi](https://eu-west-1.console.aws.amazon.com/lambda/home?region=eu-west-1#/create/app?applicationId=arn:aws:serverlessrepo:eu-west-1:497086895112:applications/aws-private-ca-policy-venafi)
+1. Go to available application page and choose private application tab: https://eu-west-1.console.aws.amazon.com/serverlessrepo/home?region=eu-west-1#/available-applications
+
+1. Find aws-private-ca-policy-venafi application and open it
 
 1. Fill credentials parameters. CLOUDAPIKEY (encrypted string from IAM administrator) for Venafi Cloud and TPPPASSWORD (encrypted string from IAM administrator),
 TPPURL,TPPUSER for the Platform
 
-1. If you want to non existing policy from request will be saved to database add SAVE_POLICY_FROM_REQUEST with "true"
+1. If you want to non existing policy from request will be saved to database change SAVEPOLICYFROMREQUEST to "true"
+
+1. Change default zone parameter DEFAULTZONE
  
 1. Click Deploy button to deploy cloudformation stack and wait untill deploy is finished.
     
