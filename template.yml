@@ -47,7 +47,11 @@ Resources:
   VenafiLambdaApi:
     Type: AWS::Serverless::Api
     Properties:
+      Name: VenafiLambdaApi
       StageName: v1
+#      MethodSettings:
+#        - LoggingLevel: ERROR
+#          MetricsEnabled: true
       Auth:
         DefaultAuthorizer: AWS_IAM
         InvokeRole: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${LambdaRole}'
