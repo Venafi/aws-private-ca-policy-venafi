@@ -48,6 +48,10 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       StageName: v1
+      MethodSettings:
+        LoggingLevel: ERROR
+        MetricsEnabled: true
+      CacheClusterEnabled: true
       Auth:
         DefaultAuthorizer: AWS_IAM
         InvokeRole: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${LambdaRole}'
