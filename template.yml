@@ -26,6 +26,9 @@ Parameters:
   TPPURL:
     Type: String
     Default: ""
+  TRUST_BUNDLE:
+    Type: String
+    Default: ""
   CLOUDURL:
     Type: String
     Default: ""

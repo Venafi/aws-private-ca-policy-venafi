@@ -61,7 +61,17 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
     aws kms create-alias --alias-name alias/venafi-encryption-key --target-key-id ${KEY_ID}
     aws kms describe-key --key-id alias/venafi-encryption-key
     ```
-- Create key policy for venafi lambda:
+1. Review lambda policy file venafi-lambda-policy.json Change "your-key-id-here" to the KMS KEY_ID
+
+
+1. Create a role for Venafi lambda execution and attach policy to it
+    ```bash
+    aws iam create-role --role-name VenafiLambda --assume-role-policy-document file://role-venafi-lambda.json
+    aws iam put-role-policy --role-name VenafiLambda --policy-name VenafiLambdaPolicy --policy-document file://venafi-lambda-policy.json
+    ```
+
+1. Add trust relationship to VenafiLambda policy (apigateway.amazonaws.com, lambda.amazonaws.com)                
+- Create KMS key policy for venafi lambda:
     ```bash
     KMS_KEY_ARN=$(aws kms describe-key --key-id alias/venafi-encryption-key|jq .KeyMetadata.Arn)
     ACC_ID=$(aws sts  get-caller-identity|jq -r .Account)
@@ -117,16 +127,10 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 
 - Pass this encrypted string to engineer who will deploy lambda
 
-1. Review lambda policy file venafi-lambda-policy.json Change "your-key-id-here" to the KMS KEY_ID
-
-
-1. Create a role for Venafi lambda execution and attach policy to it
-    ```bash
-    aws iam create-role --role-name VenafiLambda --assume-role-policy-document file://role-venafi-lambda.json
-    aws iam put-role-policy --role-name VenafiLambda --policy-name VenafiLambdaPolicy --policy-document file://venafi-lambda-policy.json
-    ```
 
 ### Engineer instructions
+
+1. TODO: Install sam
 
 1. Go to available application page and choose private application tab: https://eu-west-1.console.aws.amazon.com/serverlessrepo/home?region=eu-west-1#/available-applications
 
@@ -134,6 +138,8 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 
 1. Fill credentials parameters. CLOUDAPIKEY (encrypted string from IAM administrator) for Venafi Cloud and TPPPASSWORD (encrypted string from IAM administrator),
 TPPURL,TPPUSER for the Platform
+
+1. TODO: add trust bundle configuration instructions
 
 1. If you want to non existing policy from request will be saved to database change SAVEPOLICYFROMREQUEST to "true"
 
