@@ -5,12 +5,9 @@
       "Sid": "VisualEditor0",
       "Effect": "Allow",
       "Action": [
-        "lambda:CreateFunction",
-        "lambda:TagResource",
         "acm:DeleteCertificate",
         "kms:Decrypt",
         "acm-pca:GetCertificate",
-        "lambda:GetFunctionConfiguration",
         "acm:RenewCertificate",
         "logs:CreateLogStream",
         "acm:GetCertificate",
@@ -18,79 +15,62 @@
         "dynamodb:GetItem",
         "logs:GetLogEvents",
         "acm:ImportCertificate",
-        "lambda:DeleteFunction",
-        "lambda:GetAlias",
         "dynamodb:BatchGetItem",
         "dynamodb:BatchWriteItem",
         "dynamodb:PutItem",
-        "lambda:GetEventSourceMapping",
-        "lambda:InvokeFunction",
         "acm:UpdateCertificateOptions",
-        "lambda:ListAliases",
-        "acm-pca:GetCertificateAuthorityCertificate",
         "dynamodb:Scan",
-        "acm-pca:RevokeCertificate",
         "dynamodb:UpdateItem",
-        "lambda:UpdateAlias",
-        "lambda:UpdateFunctionCode",
         "acm:DescribeCertificate",
-        "lambda:PublishVersion",
-        "lambda:DeleteEventSourceMapping",
-        "lambda:CreateAlias",
-        "lambda:ListVersionsByFunction",
-        "lambda:GetLayerVersion",
         "logs:DescribeLogStreams",
-        "lambda:PublishLayerVersion",
         "dynamodb:ListTagsOfResource",
-        "lambda:InvokeAsync",
-        "lambda:GetLayerVersionPolicy",
-        "lambda:UntagResource",
-        "lambda:PutFunctionConcurrency",
-        "acm-pca:IssueCertificate",
-        "lambda:ListTags",
-        "lambda:DeleteLayerVersion",
         "kms:DescribeKey",
         "acm:ExportCertificate",
-        "lambda:UpdateEventSourceMapping",
         "dynamodb:ConditionCheckItem",
         "logs:DescribeLogGroups",
-        "lambda:GetFunction",
-        "lambda:UpdateFunctionConfiguration",
         "dynamodb:Query",
         "logs:PutLogEvents",
-        "lambda:DeleteAlias",
-        "lambda:DeleteFunctionConcurrency",
-        "logs:GetLogGroupFields",
-        "lambda:GetPolicy"
+        "logs:GetLogGroupFields"
       ],
       "Resource": [
         "arn:aws:dynamodb:*:*:table/VenafiCertPolicy",
-        "arn:aws:acm-pca:*:*:certificate-authority/*",
-        "arn:aws:acm:*:*:certificate/*",
         "arn:aws:logs:*:*:log-group:*:*:*",
         "arn:aws:logs:*:*:log-group:*Venafi*Lambda*",
         "arn:aws:kms:*:*:key/your-key-id-here",
-        "arn:aws:lambda:*:*:function:serverlessrepo-aws-private-VenafiCertRequestLambda-*"
+        "arn:aws:lambda:*:*:function:serverlessrepo-aws-private-VenafiCertPolicyLambda-*"
       ]
     },
     {
-      "Sid": "VisualEditor1",
-      "Effect": "Allow",
-      "Action": "acm-pca:ListCertificateAuthorities",
-      "Resource": "*"
-    },
-    {
-      "Sid": "VisualEditor2",
+      "Sid": "ACMPCA",
       "Effect": "Allow",
       "Action": [
-        "lambda:ListFunctions",
-        "lambda:ListEventSourceMappings",
-        "lambda:ListLayerVersions",
-        "lambda:ListLayers",
-        "lambda:GetAccountSettings",
-        "lambda:CreateEventSourceMapping"
+        "acm-pca:ListCertificateAuthorities",
+        "acm-pca:IssueCertificate",
+        "acm-pca:RevokeCertificate",
+        "acm-pca:GetCertificateAuthorityCertificate"
       ],
-      "Resource": "arn:aws:lambda:*:*:function:serverlessrepo-aws-private-VenafiCertRequestLambda-*"
+      "Resource": [
+        "arn:aws:acm:*:*:certificate/*",
+        "arn:aws:acm-pca:*:*:certificate-authority/*"
+      ]
+    },
+    {
+      "Sid": "VenafiCertRequestLambda",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:GetFunctionConfiguration",
+        "lambda:InvokeAsync",
+        "lambda:GetFunction",
+        "lambda:UpdateFunctionConfiguration",
+        "lambda:GetPolicy",
+        "lambda:InvokeFunction",
+        "lambda:ListFunctions",
+        "lambda:GetAccountSettings"
+      ],
+      "Resource": [
+        "arn:aws:lambda:*:*:function:serverlessrepo-aws-private-VenafiCertRequestLambda-*",
+        "arn:aws:lambda:*:*:function:serverlessrepo-aws-private-VenafiCertPolicyLambda-*"
+      ]
     }
   ]
 }
