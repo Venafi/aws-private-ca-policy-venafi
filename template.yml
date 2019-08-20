@@ -12,7 +12,7 @@ Metadata:
     ReadmeUrl: README.md
     Labels: ['tls','ssl','certificates','aws-certificate-manager','venafi-platform','venafi-cloud']
     HomePageUrl: https://github.com/Venafi/aws-private-ca-policy-venafi
-    SemanticVersion: 0.0.1
+    SemanticVersion: 0.0.2
     SourceCodeUrl: https://github.com/Venafi/aws-private-ca-policy-venafi
 
 Parameters:
@@ -26,7 +26,7 @@ Parameters:
   TPPURL:
     Type: String
     Default: ""
-  TRUST_BUNDLE:
+  TrustBundle:
     Type: String
     Default: ""
   CLOUDURL:
@@ -36,7 +36,7 @@ Parameters:
     NoEcho : "true"
     Default: ""
     Type: String
-  SAVEPOLICYFROMREQUEST:
+  SavePolicyFromRequest:
     Default: "false"
     Type: String
   DEFAULTZONE:
@@ -72,7 +72,7 @@ Resources:
       Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${LambdaRole}'
       Environment:
         Variables:
-          SAVE_POLICY_FROM_REQUEST: !Ref  SAVEPOLICYFROMREQUEST
+          SAVE_POLICY_FROM_REQUEST: !Ref  SavePolicyFromRequest
           DEFAULT_ZONE: !Ref DEFAULTZONE
       Policies:
         - CloudWatchPutMetricPolicy: {}
@@ -106,6 +106,7 @@ Resources:
           TPPURL: !Ref TPPURL
           CLOUDURL: !Ref CLOUDURL
           CLOUDAPIKEY: !Ref CLOUDAPIKEY
+          TRUST_BUNDLE: !Ref TrustBundle
       Policies:
         - CloudWatchPutMetricPolicy: {}
         - DynamoDBCrudPolicy:

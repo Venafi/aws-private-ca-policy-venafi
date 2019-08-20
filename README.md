@@ -13,9 +13,10 @@ Note: the "user" will most likely be an application rather than a person and the
 
 ### Permissions
 
-The IAM user role for the Lambda functions should have following policies assigned:
-- AWSCertificateManagerPrivateCAUser
-- AmazonDynamoDBFullAccess (TODO: this can be and should be reduced)
+The IAM administrator should have following policies:  
+TODO: make a list  
+Engineer should have following policies:
+TODO: make a list  
     
 ### Example certificate signing request:
 
@@ -130,7 +131,7 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 
 ### Engineer instructions
 
-1. TODO: Install sam
+1. Install SAM CLI: https://docs.aws.amazon.com/en_us/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html
 
 1. Go to available application page and choose private application tab: https://eu-west-1.console.aws.amazon.com/serverlessrepo/home?region=eu-west-1#/available-applications
 
@@ -139,9 +140,13 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 1. Fill credentials parameters. CLOUDAPIKEY (encrypted string from IAM administrator) for Venafi Cloud and TPPPASSWORD (encrypted string from IAM administrator),
 TPPURL,TPPUSER for the Platform
 
-1. TODO: add trust bundle configuration instructions
+1. In most cases for Venafi Platform  you will need to specify a trust bundle because the Venafi Platform is commonly secured using a certificate issued by a private enterprise PKI. 
+   You can do it by specifying TrustBundle parameter which should be base64 encoded string of Platform trusted PEM certificate. You can do it like this:
+    ```bash
+    cat /opt/venafi/bundle.pem |base64 --wrap=10000
+    ``` 
 
-1. If you want to non existing policy from request will be saved to database change SAVEPOLICYFROMREQUEST to "true"
+1. If you want to non existing policy from request will be saved to database change SavePolicyFromRequest to "true"
 
 1. Change default zone parameter DEFAULTZONE
  
