@@ -62,7 +62,7 @@ Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` the to the
             --role-name VenafiRequestLambdaRole \
             --policy-name VenafiRequestLambdaRolePolicy \
             --policy-document file://aws-policies/VenafiRequestLambdaRolePolicy.json
-    ```
+        ```
 
 1. Create KMS key policy allowing it to be used by the Venafi Policy Lambda:
     ```bash
