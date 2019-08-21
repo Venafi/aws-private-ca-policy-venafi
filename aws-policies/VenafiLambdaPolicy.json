@@ -2,6 +2,13 @@
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Sid": "AssumeRole",
+      "Effect": "Allow",
+
+      "Action": "sts:AssumeRole",
+      "Resource":  "arn:aws:sts::497086895112:assumed-role/VenafiLambda/*"
+    },
+    {
       "Sid": "VisualEditor0",
       "Effect": "Allow",
       "Action": [
@@ -42,6 +49,7 @@
         "acm-pca:GetCertificateAuthorityCertificate",
         "acm:DeleteCertificate",
         "acm-pca:GetCertificate",
+        "acm:RequestCertificate",
         "acm:RenewCertificate",
         "acm:GetCertificate",
         "acm:ImportCertificate",

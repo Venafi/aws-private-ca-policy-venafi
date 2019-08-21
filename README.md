@@ -62,16 +62,25 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
     aws kms create-alias --alias-name alias/venafi-encryption-key --target-key-id ${KEY_ID}
     aws kms describe-key --key-id alias/venafi-encryption-key
     ```
-1. Review lambda policy file venafi-lambda-policy.json Change "your-key-id-here" to the KMS KEY_ID
+1. Review lambda policy files aws-policies/VenafiPolicyLambdaPolicy.json and  aws-policies/VenafiRequestLambdaPolicy.json.
+ Change "your-key-id-here" in aws-policies/VenafiPolicyLambdaPolicy.json the to the KMS KEY_ID
 
 
-1. Create a role for Venafi lambda execution and attach policy to it
+1. Create roles for Venafi lambda execution and attach policies to it
+
+- for VenafiPolicyLambda
     ```bash
-    aws iam create-role --role-name VenafiLambda --assume-role-policy-document file://role-venafi-lambda.json
-    aws iam put-role-policy --role-name VenafiLambda --policy-name VenafiLambdaPolicy --policy-document file://venafi-lambda-policy.json
+    aws iam create-role --role-name VenafiPolicyLambdaRole --assume-role-policy-document file://aws-policies/VenafiPolicyLambdaPolicy.json
+    aws iam put-role-policy --role-name VenafiPolicyLambdaRole --policy-name VenafiPolicyLambdaPolicy --policy-document file://aws-policies/VenafiPolicyLambdaPolicy.json
+    ```
+- for VenafiRequestLambda
+    ```bash
+    aws iam create-role --role-name VenafiRequestLambdaRole --assume-role-policy-document file://aws-policies/VenafiRequestLambdaPolicy.json
+    aws iam put-role-policy --role-name VenafiRequestLambdaRole --policy-name VenafiRequestLambdaPolicy --policy-document file://aws-policies/VenafiRequestLambdaPolicy.json
     ```
 
-1. Add trust relationship to VenafiLambda policy (apigateway.amazonaws.com, lambda.amazonaws.com)                
+1. Add trust relationship to VenafiLambda policy (apigateway.amazonaws.com, lambda.amazonaws.com)     
+           
 - Create KMS key policy for venafi lambda:
     ```bash
     KMS_KEY_ARN=$(aws kms describe-key --key-id alias/venafi-encryption-key|jq .KeyMetadata.Arn)
@@ -200,7 +209,7 @@ TPPURL,TPPUSER for the Platform
         --region <put your region here>
     ```
 
-1. Copy `resource-policy-example.json` to `resource-policy.json` and and customize the settings.
+1. Copy `aws-policies/api-resource-policy-example.json` to `resource-policy.json` and and customize the settings.
 
 1. Apply the policy to the API endpoint. To get the api-id, run the `aws apigateway get-rest-apis` command.
     Example:

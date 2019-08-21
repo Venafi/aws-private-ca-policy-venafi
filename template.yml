@@ -42,8 +42,11 @@ Parameters:
   DEFAULTZONE:
     Default: "Default"
     Type: String
-  LambdaRole:
-    Default: "VenafiLambda"
+  RequestLambdaRole:
+    Default: "VenafiRequestLambdaRole"
+    Type: String
+  PolicyLambdaRole:
+    Default: "VenafiPolicyLambdaRole"
     Type: String
 
 Resources:
@@ -57,7 +60,7 @@ Resources:
 #          MetricsEnabled: true
       Auth:
         DefaultAuthorizer: AWS_IAM
-        InvokeRole: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${LambdaRole}'
+        InvokeRole: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${RequestLambdaRole}'
 
   VenafiCertRequestLambda:
     Type: 'AWS::Serverless::Function'
@@ -69,7 +72,7 @@ Resources:
       MemorySize: 512
       Timeout: 10
       #TODO: provide json for creating a role
-      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${LambdaRole}'
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${RequestLambdaRole}'
       Environment:
         Variables:
           SAVE_POLICY_FROM_REQUEST: !Ref  SavePolicyFromRequest
@@ -98,7 +101,7 @@ Resources:
       Description: Venfi policy with a RESTful API endpoint using Amazon API Gateway.
       MemorySize: 512
       Timeout: 10
-      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${LambdaRole}'
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${RequestLambdaRole}'
       Environment:
         Variables:
           TPPUSER: !Ref  TPPUSER
