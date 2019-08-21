@@ -11,6 +11,10 @@ This UNDER DEVELOPMENT solution implements two [AWS Lambda](https://aws.amazon.c
 
 Note: the "user" will most likely be an application rather than a person and the solution also supports the case where ACM generates the key pair and CSR and returns the certificate, private key, and chain certificates to the "user".
 
+### Prerequisites
+
+1. ACM PCA https://docs.aws.amazon.com/en_us/acm-pca/latest/userguide/PCACertInstall.html 
+
 ### Permissions
 
 The IAM administrator should have following policies:  
