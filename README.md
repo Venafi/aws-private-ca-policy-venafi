@@ -13,9 +13,10 @@ Note: the "user" will most likely be an application rather than a person and the
 
 ### Permissions
 
-The IAM user role for the Lambda functions should have following policies assigned:
-- AWSCertificateManagerPrivateCAUser
-- AmazonDynamoDBFullAccess (TODO: this can be and should be reduced)
+The IAM administrator should have following policies:  
+TODO: make a list  
+Engineer should have following policies:
+TODO: make a list  
     
 ### Example certificate signing request:
 
@@ -61,7 +62,26 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
     aws kms create-alias --alias-name alias/venafi-encryption-key --target-key-id ${KEY_ID}
     aws kms describe-key --key-id alias/venafi-encryption-key
     ```
-- Create key policy for venafi lambda:
+1. Review lambda policy files [VenafiPolicyLambdaPolicy.json](aws-policies/VenafiPolicyLambdaPolicy.json) and  [VenafiRequestLambdaPolicy.json](aws-policies/VenafiRequestLambdaPolicy.json).
+ Change "your-key-id-here" in aws-policies/VenafiPolicyLambdaPolicy.json the to the KMS KEY_ID
+
+
+1. Create roles for Venafi lambda execution and attach policies to it
+
+- for VenafiPolicyLambda
+    ```bash
+    aws iam create-role --role-name VenafiPolicyLambdaRole --assume-role-policy-document file://aws-policies/VenafiPolicyLambdaPolicy.json
+    aws iam put-role-policy --role-name VenafiPolicyLambdaRole --policy-name VenafiPolicyLambdaPolicy --policy-document file://aws-policies/VenafiPolicyLambdaPolicy.json
+    ```
+- for VenafiRequestLambda
+    ```bash
+    aws iam create-role --role-name VenafiRequestLambdaRole --assume-role-policy-document file://aws-policies/VenafiRequestLambdaPolicy.json
+    aws iam put-role-policy --role-name VenafiRequestLambdaRole --policy-name VenafiRequestLambdaPolicy --policy-document file://aws-policies/VenafiRequestLambdaPolicy.json
+    ```
+
+1. Add trust relationship to VenafiLambda policy (apigateway.amazonaws.com, lambda.amazonaws.com)     
+           
+- Create KMS key policy for venafi lambda:
     ```bash
     KMS_KEY_ARN=$(aws kms describe-key --key-id alias/venafi-encryption-key|jq .KeyMetadata.Arn)
     ACC_ID=$(aws sts  get-caller-identity|jq -r .Account)
@@ -117,16 +137,10 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 
 - Pass this encrypted string to engineer who will deploy lambda
 
-1. Review lambda policy file venafi-lambda-policy.json Change "your-key-id-here" to the KMS KEY_ID
-
-
-1. Create a role for Venafi lambda execution and attach policy to it
-    ```bash
-    aws iam create-role --role-name VenafiLambda --assume-role-policy-document file://role-venafi-lambda.json
-    aws iam put-role-policy --role-name VenafiLambda --policy-name VenafiLambdaPolicy --policy-document file://venafi-lambda-policy.json
-    ```
 
 ### Engineer instructions
+
+1. Install SAM CLI: https://docs.aws.amazon.com/en_us/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html
 
 1. Go to available application page and choose private application tab: https://eu-west-1.console.aws.amazon.com/serverlessrepo/home?region=eu-west-1#/available-applications
 
@@ -135,7 +149,13 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 1. Fill credentials parameters. CLOUDAPIKEY (encrypted string from IAM administrator) for Venafi Cloud and TPPPASSWORD (encrypted string from IAM administrator),
 TPPURL,TPPUSER for the Platform
 
-1. If you want to non existing policy from request will be saved to database change SAVEPOLICYFROMREQUEST to "true"
+1. In most cases for Venafi Platform  you will need to specify a trust bundle because the Venafi Platform is commonly secured using a certificate issued by a private enterprise PKI. 
+   You can do it by specifying TrustBundle parameter which should be base64 encoded string of Platform trusted PEM certificate. You can do it like this:
+    ```bash
+    cat /opt/venafi/bundle.pem |base64 --wrap=10000
+    ``` 
+
+1. If you want to non existing policy from request will be saved to database change SavePolicyFromRequest to "true"
 
 1. Change default zone parameter DEFAULTZONE
  
@@ -189,7 +209,7 @@ TPPURL,TPPUSER for the Platform
         --region <put your region here>
     ```
 
-1. Copy `resource-policy-example.json` to `resource-policy.json` and and customize the settings.
+1. Copy `aws-policies/api-resource-policy-example.json` to `resource-policy.json` and and customize the settings.
 
 1. Apply the policy to the API endpoint. To get the api-id, run the `aws apigateway get-rest-apis` command.
     Example:

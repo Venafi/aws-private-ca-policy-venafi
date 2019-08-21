@@ -1,0 +1,84 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AssumeRole",
+      "Effect": "Allow",
+
+      "Action": "sts:AssumeRole",
+      "Resource":  "arn:aws:sts::497086895112:assumed-role/VenafiLambda/*"
+    },
+    {
+      "Sid": "VisualEditor0",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt",
+        "logs:CreateLogStream",
+        "kms:Encrypt",
+        "dynamodb:GetItem",
+        "logs:GetLogEvents",
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem",
+        "logs:DescribeLogStreams",
+        "dynamodb:ListTagsOfResource",
+        "kms:DescribeKey",
+        "dynamodb:ConditionCheckItem",
+        "logs:DescribeLogGroups",
+        "dynamodb:Query",
+        "logs:PutLogEvents",
+        "logs:GetLogGroupFields"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:*:*:table/VenafiCertPolicy",
+        "arn:aws:logs:*:*:log-group:*:*:*",
+        "arn:aws:logs:*:*:log-group:*Venafi*Lambda*",
+        "arn:aws:kms:*:*:key/your-key-id-here",
+        "arn:aws:lambda:*:*:function:serverlessrepo-aws-private-VenafiCertPolicyLambda-*"
+      ]
+    },
+    {
+      "Sid": "ACMPCA",
+      "Effect": "Allow",
+      "Action": [
+        "acm-pca:ListCertificateAuthorities",
+        "acm-pca:IssueCertificate",
+        "acm-pca:RevokeCertificate",
+        "acm-pca:GetCertificateAuthorityCertificate",
+        "acm:DeleteCertificate",
+        "acm-pca:GetCertificate",
+        "acm:RequestCertificate",
+        "acm:RenewCertificate",
+        "acm:GetCertificate",
+        "acm:ImportCertificate",
+        "acm:UpdateCertificateOptions",
+        "acm:DescribeCertificate",
+        "acm:ExportCertificate"
+      ],
+      "Resource": [
+        "arn:aws:acm:*:*:certificate/*",
+        "arn:aws:acm-pca:*:*:certificate-authority/*"
+      ]
+    },
+    {
+      "Sid": "VenafiCertRequestLambda",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:GetFunctionConfiguration",
+        "lambda:InvokeAsync",
+        "lambda:GetFunction",
+        "lambda:UpdateFunctionConfiguration",
+        "lambda:GetPolicy",
+        "lambda:InvokeFunction",
+        "lambda:ListFunctions",
+        "lambda:GetAccountSettings"
+      ],
+      "Resource": [
+        "arn:aws:lambda:*:*:function:serverlessrepo-aws-private-VenafiCertRequestLambda-*",
+        "arn:aws:lambda:*:*:function:serverlessrepo-aws-private-VenafiCertPolicyLambda-*"
+      ]
+    }
+  ]
+}

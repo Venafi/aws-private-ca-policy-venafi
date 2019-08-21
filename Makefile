@@ -109,7 +109,7 @@ sam_update: sam_package
 sam_publish: sam_package
 	sam publish \
         --template packaged.yaml \
-        --region $(REGION)
+        --region us-east-1
 
 get_proxy:
 	aws cloudformation --region $(REGION) describe-stacks --stack-name $(STACK_NAME) --query "Stacks[0].Outputs[0].OutputValue"

@@ -2,54 +2,50 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "VisualEditor0",
       "Effect": "Allow",
       "Action": [
-        "acm:DeleteCertificate",
         "kms:Decrypt",
         "logs:DescribeLogStreams",
         "dynamodb:ListTagsOfResource",
-        "acm:RenewCertificate",
+        "lambda:InvokeAsync",
+        "lambda:GetFunctionConfiguration",
         "logs:CreateLogStream",
-        "acm:GetCertificate",
         "kms:Encrypt",
         "logs:GetLogEvents",
         "dynamodb:GetItem",
         "kms:DescribeKey",
-        "acm:ImportCertificate",
         "dynamodb:BatchGetItem",
-        "acm:ExportCertificate",
         "dynamodb:BatchWriteItem",
         "logs:DescribeLogGroups",
         "dynamodb:ConditionCheckItem",
         "dynamodb:PutItem",
-        "acm:UpdateCertificateOptions",
+        "lambda:InvokeFunction",
+        "lambda:GetFunction",
+        "lambda:UpdateFunctionConfiguration",
         "dynamodb:Scan",
         "dynamodb:Query",
         "dynamodb:UpdateItem",
         "logs:PutLogEvents",
-        "acm:DescribeCertificate",
-        "logs:GetLogGroupFields"
+        "logs:GetLogGroupFields",
+        "lambda:GetPolicy"
       ],
       "Resource": [
-        "arn:aws:acm:*:*:certificate/*",
+        "arn:aws:kms:*:*:key/your-key-id-here",
+        "arn:aws:lambda:*:*:function:serverlessrepo-aws-private-VenafiCertPolicyLambda-*",
         "arn:aws:logs:*:*:log-group:*:*:*",
         "arn:aws:logs:*:*:log-group:*Venafi*Lambda*",
-        "arn:aws:kms:*:*:key/your-key-id-here",
         "arn:aws:dynamodb:*:*:table/VenafiCertPolicy"
       ]
     },
     {
-      "Sid": "VisualEditor1",
       "Effect": "Allow",
       "Action": [
-        "logs:GetLogRecord",
-        "dynamodb:ListTables",
-        "acm:RequestCertificate",
-        "acm:ListCertificates",
-        "logs:CreateLogGroup"
+        "lambda:ListFunctions",
+        "lambda:GetAccountSettings"
       ],
-      "Resource": "*"
+      "Resource": [
+        "arn:aws:lambda:*:*:function:serverlessrepo-aws-private-VenafiCertPolicyLambda-*"
+      ]
     }
   ]
 }
