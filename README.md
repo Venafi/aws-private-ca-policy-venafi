@@ -41,27 +41,27 @@ Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` the to the
 
 1. Create roles for the Venafi Lambda functions and attach policies to them:
 
-- for the Venafi Policy Lambda:
-    ```bash
-    aws iam create-role \
-        --role-name VenafiPolicyLambdaRole \
-        --assume-role-policy-document file://aws-policies/VenafiPolicyLambdaRoleTrust.json
-        
-    aws iam put-role-policy \
-        --role-name VenafiPolicyLambdaRole \
-        --policy-name VenafiPolicyLambdaRolePolicy \
-        --policy-document file://aws-policies/VenafiPolicyLambdaRolePolicy.json
-    ```
-- for the Venafi Request Lambda:
-    ```bash
-    aws iam create-role \
-        --role-name VenafiRequestLambdaRole \
-        --assume-role-policy-document file://aws-policies/VenafiRequestLambdaRoleTrust.json
-        
-    aws iam put-role-policy \
-        --role-name VenafiRequestLambdaRole \
-        --policy-name VenafiRequestLambdaRolePolicy \
-        --policy-document file://aws-policies/VenafiRequestLambdaRolePolicy.json
+    - for the Venafi Policy Lambda:
+        ```bash
+        aws iam create-role \
+            --role-name VenafiPolicyLambdaRole \
+            --assume-role-policy-document file://aws-policies/VenafiPolicyLambdaRoleTrust.json
+
+        aws iam put-role-policy \
+            --role-name VenafiPolicyLambdaRole \
+            --policy-name VenafiPolicyLambdaRolePolicy \
+            --policy-document file://aws-policies/VenafiPolicyLambdaRolePolicy.json
+        ```
+    - for the Venafi Request Lambda:
+        ```bash
+        aws iam create-role \
+            --role-name VenafiRequestLambdaRole \
+            --assume-role-policy-document file://aws-policies/VenafiRequestLambdaRoleTrust.json
+
+        aws iam put-role-policy \
+            --role-name VenafiRequestLambdaRole \
+            --policy-name VenafiRequestLambdaRolePolicy \
+            --policy-document file://aws-policies/VenafiRequestLambdaRolePolicy.json
     ```
 
 1. Create KMS key policy allowing it to be used by the Venafi Policy Lambda:
@@ -105,16 +105,16 @@ Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` the to the
     EOF
     ```
 
-- Attach the policy to the key:
+1. Attach the policy to the key:
     ```bash
     aws kms put-key-policy --key-id ${KEY_ID} --policy-name default --policy file://key-policy.json 
     ```
-- Encrypt the credentials for authenticating with the Venafi service. This will be the TPP password for Venafi Platform and the API key for Venafi Cloud.
+2. Encrypt the credentials for authenticating with the Venafi service. This will be the TPP password for Venafi Platform
+and the API key for Venafi Cloud.
     ```bash
     aws kms encrypt --key-id ${KEY_ID} --plaintext veryBigSecret|jq -r .CiphertextBlob
     ```
-
-- Provide this encrypted string to the engineer who will deploy Venafi Serverless Application.
+    - Provide this encrypted string to the engineer who will deploy Venafi Serverless Application.
 
 
 ### Engineer Instructions
