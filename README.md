@@ -13,16 +13,174 @@ Note: the "user" will most likely be an application rather than a person and the
 
 ### Prerequisites
 
-1. ACM PCA https://docs.aws.amazon.com/en_us/acm-pca/latest/userguide/PCACertInstall.html 
+1. An [Amazon Certificate Manager Private CA (PCA)](https://docs.aws.amazon.com/en_us/acm-pca/latest/userguide/PCACertInstall.html)
 
-### Permissions
-
-The IAM administrator should have following policies:  
-TODO: make a list  
-Engineer should have following policies:
-TODO: make a list  
+1. The IAM Administrator requires the following access policy:  
+    - TODO: list least privileges  
+1. The AWS Engineer requires the following access policy:
+    - TODO: list least privileges  
     
-### Example certificate signing request:
+## Setup and Configuration
+>Note: the following instructions assume you are using a Linux command line, the syntax will differ for Windows.
+
+### IAM Administrator Instructions
+
+#### Create roles for Lambda functions and KMS key for encrypting credentials
+1. Create a KMS key for encrypting secrets (you may skip this step if you already have a KMS key that you want to use).
+Please review the [AWS KMS documentation](https://docs.aws.amazon.com/cli/latest/reference/kms/index.html) for additional details.  
+    ```bash    
+    KEY_ID=$(aws kms create-key --description "Encryption key for Venafi credentials" | jq -r .KeyMetadata.KeyId)
+    aws kms create-alias --alias-name alias/venafi-encryption-key --target-key-id ${KEY_ID}
+    aws kms describe-key --key-id alias/venafi-encryption-key
+    ```
+1. Download and review the Lambda policy files [VenafiPolicyLambdaRoleTrust.json](aws-policies/VenafiPolicyLambdaRoleTrust.json),
+[VenafiPolicyLambdaRolePolicy.json](aws-policies/VenafiPolicyLambdaRolePolicy.json), 
+[VenafiRequestLambdaRoleTrust.json](aws-policies/VenafiRequestLambdaRoleTrust.json), and
+[VenafiRequestLambdaRolePolicy.json](aws-policies/VenafiRequestLambdaRolePolicy.json).
+Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` the to the ARN of your KMS key.
+
+1. Create roles for the Venafi Lambda functions and attach policies to them:
+
+- for the Venafi Policy Lambda:
+    ```bash
+    aws iam create-role \
+        --role-name VenafiPolicyLambdaRole \
+        --assume-role-policy-document file://aws-policies/VenafiPolicyLambdaRoleTrust.json
+        
+    aws iam put-role-policy \
+        --role-name VenafiPolicyLambdaRole \
+        --policy-name VenafiPolicyLambdaRolePolicy \
+        --policy-document file://aws-policies/VenafiPolicyLambdaRolePolicy.json
+    ```
+- for the Venafi Request Lambda:
+    ```bash
+    aws iam create-role \
+        --role-name VenafiRequestLambdaRole \
+        --assume-role-policy-document file://aws-policies/VenafiRequestLambdaRoleTrust.json
+        
+    aws iam put-role-policy \
+        --role-name VenafiRequestLambdaRole \
+        --policy-name VenafiRequestLambdaRolePolicy \
+        --policy-document file://aws-policies/VenafiRequestLambdaRolePolicy.json
+    ```
+
+1. Create KMS key policy allowing it to be used by the Venafi Policy Lambda:
+    ```bash
+    KMS_KEY_ARN=$(aws kms describe-key --key-id alias/venafi-encryption-key|jq .KeyMetadata.Arn)
+    ACCT_ID=$(aws sts  get-caller-identity | jq -r .Account)
+    LAMBDA_ROLE_ARN="arn:aws:iam::${ACC_ID}:role/VenafiLambda"
+    cat << EOF > key-policy.json
+    {
+      "Version" : "2012-10-17",
+      "Statement" : [ {
+        "Sid" : "EnableIAMUserPermissions",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::${ACCT_ID}:root"
+        },
+        "Action" : "kms:*",
+        "Resource" : "${KMS_KEY_ARN}"
+      }, {
+        "Sid" : "Allow use of the key",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "${POLICY_LAMBDA_ROLE_ARN}"
+        },
+        "Action" : [ "kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey" ],
+        "Resource" : "${KMS_KEY_ARN}"
+      }, {
+        "Sid" : "Allow attachment of persistent resources",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "${POLICY_LAMBDA_ROLE_ARN}"
+        },
+        "Action" : [ "kms:CreateGrant", "kms:ListGrants", "kms:RevokeGrant" ],
+        "Resource" : "${KMS_KEY_ARN}",
+        "Condition" : {
+          "Bool" : {
+            "kms:GrantIsForAWSResource" : "true"
+          }
+        }
+      } ]
+    }
+    EOF
+    ```
+
+- Attach the policy to the key:
+    ```bash
+    aws kms put-key-policy --key-id ${KEY_ID} --policy-name default --policy file://key-policy.json 
+    ```
+- Encrypt the credentials for authenticating with the Venafi service. This will be the TPP password for Venafi Platform and the API key for Venafi Cloud.
+    ```bash
+    aws kms encrypt --key-id ${KEY_ID} --plaintext veryBigSecret|jq -r .CiphertextBlob
+    ```
+
+- Provide this encrypted string to the engineer who will deploy Venafi Serverless Application.
+
+
+### Engineer Instructions
+
+1. Install SAM CLI: https://docs.aws.amazon.com/en_us/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html
+
+1. Login to the AWS web console, select the region where the Venafi Lambda functions will be deployed, then navigate to the
+Serverless Appliation Repository, and select the Available Applications page:
+https://us-east-1.console.aws.amazon.com/serverlessrepo/home?region=us-east-1#/available-applications
+
+1. Search for "aws-private-ca-policy-venafi" and open it.
+
+1. Enter the appropriate connection parameters for the Venafi service you are using.  `CLOUDAPIKEY` (encrypted string provided by
+your IAM administrator) for Venafi Cloud or `TPPURL`, `TPPUSER`, and `TPPPASSWORD` (encrypted string provided by your IAM administrator)
+for Venafi Platform.
+
+1. In most cases for Venafi Platform you will need to specify a trust bundle because the Venafi Platform is commonly secured
+using a certificate issued by a private enterprise PKI.  Do this by entering the base64-encoded string that represents the
+contents of your PEM trust bundle in the `TrustBundle` parameter. This string can be obtained using the following:
+    ```bash
+    cat /opt/venafi/bundle.pem | base64 --wrap=10000
+    ``` 
+
+1. To allow automatic retrieval of Venafi policy when a zone is requested that isn't been loaded, set `SavePolicyFromRequest` to "true".
+
+1. Change `DEFAULTZONE` parameter to the name of the zone that will be used when none is specified in the request.
+ 
+1. Click Deploy button to deploy cloudformation stack and wait untill deploy is finished.
+    
+1. Add the `DEFAULTZONE` zone (and any other zones you want to pre-load) to the database so the Venafi policy will be retrieved:
+    ```bash
+    aws dynamodb put-item --table-name VenafiCertPolicy --item '{"PolicyID": {"S":"Default"}}'
+    ```
+1. Check the logs to verify the Venafi Lambda functions are working propertly and the Venafi policy is retrieved: 
+    ```bash
+    sam logs -n VenafiCertPolicyLambda --stack-name serverlessrepo-aws-private-ca-policy-venafi
+    sam logs -n VenafiCertRequestLambda --stack-name serverlessrepo-aws-private-ca-policy-venafi
+    ```    
+1. To view the policy retrieved from Venafi for the zone:
+    ```bash
+    aws dynamodb get-item --table-name VenafiCertPolicy --key '{"PolicyID": {"S":"Default"}}'
+    ```    
+1. To get the URL of the API Gateway endpoint:
+    ```bash
+    aws cloudformation describe-stacks --stack-name serverlessrepo-aws-private-ca-policy-venafi | jq -r .Stacks[].Outputs[].OutputValue
+    ```    
+1. To check pass-through functionality:
+    ```bash
+    URL=$(aws cloudformation describe-stacks --stack-name serverlessrepo-aws-private-ca-policy-venafi | jq -r .Stacks[].Outputs[].OutputValue)
+    aws acm-pca list-certificate-authorities --endpoint-url $URL
+    ```    
+
+## Requesting Certificates
+
+The API for this solution is intentionally almost identical to the Amazon ACM API. Sample client code that demonstrates API usage
+is provided in the [client-example/cli.py](client-example/cli.py).  With it you can request a certificate from ACM:
+```bash
+./cli.py request --domain "example.example.com" --base-url "https://cdvq35y9o2.execute-api.eu-west-1.amazonaws.com/v1/request" --policy Default
+```
+Or sign your CSR with the ACM Private CA (PCA):
+```bash
+python3 client-example/cli.py issue --csr-path "/home/user/csr.pem" --base-url "https://cdvq35y9o2.execute-api.eu-west-1.amazonaws.com/v1/request" --policy Default --arn "arn:aws:acm-pca:eu-west-1:497086895112:certificate-authority/cadaae4b-26c7-4c57-9ba1-f00d4e20beb2"
+```
+
+### Sample request body using a CSR
 
 ```json
 {
@@ -36,9 +194,10 @@ TODO: make a list
 }
 ```
 
-The `Csr` parameter is a base64 encoded string of the actual PKCS#10 CSR. This request is the same as ACM PCA [IssueCertificate](https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_IssueCertificate.html) API method.
+The `Csr` parameter is a base64-encoded string of the actual PKCS#10 CSR. This request is the same as ACM PCA
+[IssueCertificate](https://docs.aws.amazon.com/acm-pca/latest/APIReference/API_IssueCertificate.html) API method.
 
-Additionally you can add `VenafiZone` parameter to indicate the request should be checked using a non-default Venafi policy:
+Additionally you can add `VenafiZone` parameter to indicate the request should be checked against Venafi policy for a non-default zone:
 
 ```json
 {
@@ -53,145 +212,21 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
 }
 
 ```
-## User instructions
+     
+#### Pass-Through
+Besides handling certificate requests, the Venafi Certificate Request Lambda can pass-through other ACM actions from native AWS tools
+to ACM and ACMPCA.  Sample code for this is provided in [client-example/cli.py](client-example/cli.py).  This is very similar to the
+standard Amazon API except the period (.) needs to be removed from the command name in `X-Amz-Target` header
+(e.g. `ACMPrivateCA.GetCertificate` transforms to `ACMPrivateCAGetCertificate`).
 
-### Setup Lambda role and KMS key for credentials encryption
+### Cleanup
+To delete deployed stack run:
+```bash
+aws cloudformation delete-stack --stack-name serverlessrepo-aws-private-ca-policy-venafi
+aws cloudformation wait stack-delete-complete --stack-name serverlessrepo-aws-private-ca-policy-venafi
+```
 
-### IAM Administrator instructions
-1. Setup KMS
-
-- Create KMS key for encryption (if you already have KMS key you can skip this step). Please review KMS documentation for more options: https://docs.aws.amazon.com/cli/latest/reference/kms/index.html  
-    ```bash    
-    KEY_ID=$(aws kms create-key --description "Encryption key for Venafi credentials"|jq -r .KeyMetadata.KeyId)
-    aws kms create-alias --alias-name alias/venafi-encryption-key --target-key-id ${KEY_ID}
-    aws kms describe-key --key-id alias/venafi-encryption-key
-    ```
-1. Review lambda policy files [VenafiPolicyLambdaPolicy.json](aws-policies/VenafiPolicyLambdaPolicy.json) and  [VenafiRequestLambdaPolicy.json](aws-policies/VenafiRequestLambdaPolicy.json).
- Change "your-key-id-here" in aws-policies/VenafiPolicyLambdaPolicy.json the to the KMS KEY_ID
-
-
-1. Create roles for Venafi lambda execution and attach policies to it
-
-- for VenafiPolicyLambda
-    ```bash
-    aws iam create-role --role-name VenafiPolicyLambdaRole --assume-role-policy-document file://aws-policies/VenafiPolicyLambdaPolicy.json
-    aws iam put-role-policy --role-name VenafiPolicyLambdaRole --policy-name VenafiPolicyLambdaPolicy --policy-document file://aws-policies/VenafiPolicyLambdaPolicy.json
-    ```
-- for VenafiRequestLambda
-    ```bash
-    aws iam create-role --role-name VenafiRequestLambdaRole --assume-role-policy-document file://aws-policies/VenafiRequestLambdaPolicy.json
-    aws iam put-role-policy --role-name VenafiRequestLambdaRole --policy-name VenafiRequestLambdaPolicy --policy-document file://aws-policies/VenafiRequestLambdaPolicy.json
-    ```
-
-1. Add trust relationship to VenafiLambda policy (apigateway.amazonaws.com, lambda.amazonaws.com)     
-           
-- Create KMS key policy for venafi lambda:
-    ```bash
-    KMS_KEY_ARN=$(aws kms describe-key --key-id alias/venafi-encryption-key|jq .KeyMetadata.Arn)
-    ACC_ID=$(aws sts  get-caller-identity|jq -r .Account)
-    LAMBDA_ROLE_ARN="arn:aws:iam::${ACC_ID}:role/VenafiLambda"
-    cat << EOF > key-policy.json
-    {
-      "Version" : "2012-10-17",
-      "Statement" : [ {
-        "Sid" : "EnableIAMUserPermissions",
-        "Effect" : "Allow",
-        "Principal" : {
-          "AWS" : "arn:aws:iam::${ACC_ID}:root"
-        },
-        "Action" : "kms:*",
-        "Resource" : ${KMS_KEY_ARN}
-      }, {
-        "Sid" : "Allow use of the key",
-        "Effect" : "Allow",
-        "Principal" : {
-          "AWS" : "${LAMBDA_ROLE_ARN}"
-        },
-        "Action" : [ "kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey" ],
-        "Resource" : ${KMS_KEY_ARN}
-      }, {
-        "Sid" : "Allow attachment of persistent resources",
-        "Effect" : "Allow",
-        "Principal" : {
-          "AWS" : "${LAMBDA_ROLE_ARN}"
-        },
-        "Action" : [ "kms:CreateGrant", "kms:ListGrants", "kms:RevokeGrant" ],
-        "Resource" : ${KMS_KEY_ARN},
-        "Condition" : {
-          "Bool" : {
-            "kms:GrantIsForAWSResource" : "true"
-          }
-        }
-      } ]
-    }
-    EOF
-    ```
-
-- Attach policy to key
-    ```bash
-    aws kms put-key-policy \
-          --key-id $KEY_ID \
-          --policy-name default \
-          --policy file://key-policy.json 
-    ```
-- Encrypt credentials variable depending of what you're using Cloud or Platform. API key for cloud and TPP password for the Platform
-    ```bash
-    aws kms encrypt --key-id ${KEY_ID} --plaintext veryBigSecret|jq -r .CiphertextBlob
-    ```
-
-- Pass this encrypted string to engineer who will deploy lambda
-
-
-### Engineer instructions
-
-1. Install SAM CLI: https://docs.aws.amazon.com/en_us/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html
-
-1. Go to available application page and choose private application tab: https://eu-west-1.console.aws.amazon.com/serverlessrepo/home?region=eu-west-1#/available-applications
-
-1. Find aws-private-ca-policy-venafi application and open it
-
-1. Fill credentials parameters. CLOUDAPIKEY (encrypted string from IAM administrator) for Venafi Cloud and TPPPASSWORD (encrypted string from IAM administrator),
-TPPURL,TPPUSER for the Platform
-
-1. In most cases for Venafi Platform  you will need to specify a trust bundle because the Venafi Platform is commonly secured using a certificate issued by a private enterprise PKI. 
-   You can do it by specifying TrustBundle parameter which should be base64 encoded string of Platform trusted PEM certificate. You can do it like this:
-    ```bash
-    cat /opt/venafi/bundle.pem |base64 --wrap=10000
-    ``` 
-
-1. If you want to non existing policy from request will be saved to database change SavePolicyFromRequest to "true"
-
-1. Change default zone parameter DEFAULTZONE
- 
-1. Click Deploy button to deploy cloudformation stack and wait untill deploy is finished.
-    
-1. Add a Venafi zone to the policy table so certificate policy will be fetched from Venafi:
-    ```bash
-    aws dynamodb put-item --table-name VenafiCertPolicy --item '{"PolicyID": {"S":"Default"}}'
-    ```
-
-1. Check the logs
-    ```bash
-    sam logs -n VenafiCertPolicyLambda --stack-name serverlessrepo-aws-private-ca-policy-venafi
-    sam logs -n VenafiCertRequestLambda --stack-name serverlessrepo-aws-private-ca-policy-venafi
-    ```    
-1. To check the policy for the Venafi zone run:
-    ```bash
-    aws dynamodb get-item --table-name VenafiCertPolicy --key '{"PolicyID": {"S":"Default"}}'
-    ```    
-    
-1. To get the address of the API Gateway run:
-    ```bash
-    aws cloudformation describe-stacks --stack-name serverlessrepo-aws-private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue
-    ```    
-        
-1. Check pass-thru functionality:
-    ```bash
-    URL=$(aws cloudformation describe-stacks --stack-name serverlessrepo-aws-private-ca-policy-venafi|jq -r .Stacks[].Outputs[].OutputValue)
-    aws acm-pca list-certificate-authorities --endpoint-url $URL
-    ```    
-
-## Instruction for developers
+## Developer Instructions (for contributions to this solution or customization)
 
 ### AWS Configuration Steps:
 
@@ -224,31 +259,6 @@ TPPURL,TPPUSER for the Platform
         --patch-operations \
         op=replace,path=/policy,value=$(jq -c -a @text resource-policy.json)
     ``` 
-### Usage
-
-New api is very similar to official Amazon ACM api. Example code for usage api can be find in [example file](client-example/cli.py).
-
-You can request certificate from ACM.
-```bash
-./cli.py request --domain "example.example.com" --base-url "https://cdvq35y9o2.execute-api.eu-west-1.amazonaws.com/v1/request" --policy Default
-```
-Or sign you CSR with ACMPCA.
-```bash
-python3 client-example/cli.py issue --csr-path "/home/user/csr.pem" --base-url "https://cdvq35y9o2.execute-api.eu-west-1.amazonaws.com/v1/request" --policy Default --arn "arn:aws:acm-pca:eu-west-1:497086895112:certificate-authority/cadaae4b-26c7-4c57-9ba1-f00d4e20beb2"
-```
-     
-#### Pass-Thru
-The Venafi certificate request Lambda can pass through requests from native AWS tools to ACM and ACMPCA. 
-You can see example code in [example file](client-example/cli.py).
-It\`s similar to Amazon official api - you just need to remove dot from command name in `X-Amz-Target` header. For example `ACMPrivateCA.GetCertificate` transforms to `ACMPrivateCAGetCertificate`.
-
-### Cleanup
-To delete deployed stack run:
-
-    ```bash
-    aws cloudformation delete-stack --stack-name serverlessrepo-aws-private-ca-policy-venafi
-    aws cloudformation wait stack-delete-complete --stack-name serverlessrepo-aws-private-ca-policy-venafi
-    ```
 
 ## License
 
