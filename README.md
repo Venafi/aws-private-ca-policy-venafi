@@ -62,7 +62,7 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
     aws kms create-alias --alias-name alias/venafi-encryption-key --target-key-id ${KEY_ID}
     aws kms describe-key --key-id alias/venafi-encryption-key
     ```
-1. Review lambda policy files aws-policies/VenafiPolicyLambdaPolicy.json and  aws-policies/VenafiRequestLambdaPolicy.json.
+1. Review lambda policy files [VenafiPolicyLambdaPolicy.json](aws-policies/VenafiPolicyLambdaPolicy.json) and  [VenafiRequestLambdaPolicy.json](aws-policies/VenafiRequestLambdaPolicy.json).
  Change "your-key-id-here" in aws-policies/VenafiPolicyLambdaPolicy.json the to the KMS KEY_ID
 
 
