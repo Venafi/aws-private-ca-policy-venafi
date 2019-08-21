@@ -66,9 +66,8 @@ Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` the to the
 
 1. Create KMS key policy allowing it to be used by the Venafi Policy Lambda:
     ```bash
-    KMS_KEY_ARN=$(aws kms describe-key --key-id alias/venafi-encryption-key|jq .KeyMetadata.Arn)
+    KMS_KEY_ARN=$(aws kms describe-key --key-id alias/venafi-encryption-key | jq .KeyMetadata.Arn)
     ACCT_ID=$(aws sts  get-caller-identity | jq -r .Account)
-    LAMBDA_ROLE_ARN="arn:aws:iam::${ACC_ID}:role/VenafiLambda"
     cat << EOF > key-policy.json
     {
       "Version" : "2012-10-17",
@@ -84,7 +83,7 @@ Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` the to the
         "Sid" : "Allow use of the key",
         "Effect" : "Allow",
         "Principal" : {
-          "AWS" : "${POLICY_LAMBDA_ROLE_ARN}"
+          "AWS" : "arn:aws:iam::${ACCT_ID}:role/VenafiPolicyLambdaRole"
         },
         "Action" : [ "kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey" ],
         "Resource" : "${KMS_KEY_ARN}"
@@ -92,7 +91,7 @@ Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` the to the
         "Sid" : "Allow attachment of persistent resources",
         "Effect" : "Allow",
         "Principal" : {
-          "AWS" : "${POLICY_LAMBDA_ROLE_ARN}"
+          "AWS" : "arn:aws:iam::${ACCT_ID}:role/VenafiPolicyLambdaRole"
         },
         "Action" : [ "kms:CreateGrant", "kms:ListGrants", "kms:RevokeGrant" ],
         "Resource" : "${KMS_KEY_ARN}",
