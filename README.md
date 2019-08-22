@@ -15,9 +15,9 @@ Note: the "user" will most likely be an application rather than a person and the
 
 1. An [Amazon Certificate Manager Private CA (PCA)](https://docs.aws.amazon.com/en_us/acm-pca/latest/userguide/PCACertInstall.html)
 
-1. The IAM Administrator requires the following access policy:  
+1. The IAM Administrator requires the following access policy (access permissions):  
     - TODO: list least privileges  
-1. The AWS Engineer requires the following access policy:
+1. The AWS Engineer requires the following access policy (access permissions):
     - TODO: list least privileges  
     
 ## Setup and Configuration
@@ -252,7 +252,7 @@ aws cloudformation wait stack-delete-complete --stack-name serverlessrepo-aws-pr
 1. Apply the policy to the API endpoint. To get the api-id, run the `aws apigateway get-rest-apis` command.
     Example:
     ```bash
-    API_ID=$(aws apigateway get-rest-apis| jq -r .items[].id)
+    API_ID=$(aws apigateway get-rest-apis | jq -r .items[].id)
     aws apigateway update-rest-api \
         --rest-api-id ${API_ID} \
         --patch-operations \
