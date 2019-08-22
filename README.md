@@ -67,7 +67,7 @@ Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` the to the
 1. Create KMS key policy allowing it to be used by the Venafi Policy Lambda:
     ```bash
     KMS_KEY_ARN=$(aws kms describe-key --key-id alias/venafi-encryption-key | jq .KeyMetadata.Arn)
-    ACCT_ID=$(aws sts  get-caller-identity | jq -r .Account)
+    ACCT_ID=$(aws sts get-caller-identity | jq -r .Account)
     cat << EOF > key-policy.json
     {
       "Version" : "2012-10-17",
