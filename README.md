@@ -116,7 +116,7 @@ or the API key for Venafi Cloud.
 1. Install SAM CLI (see https://docs.aws.amazon.com/en_us/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
 
 1. Login to the AWS web console, select the region where the Venafi Lambda functions will be deployed, then navigate to the
-Serverless Appliation Repository, and select the Available Applications page:
+Serverless Appliation Repository, and select the *Available applications* (*Public applications*) page:
 https://us-east-1.console.aws.amazon.com/serverlessrepo/home?region=us-east-1#/available-applications
 
 1. Search for "aws-private-ca-policy-venafi" and open it.
