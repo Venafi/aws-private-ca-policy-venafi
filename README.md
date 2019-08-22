@@ -40,8 +40,7 @@ Please review the [AWS KMS documentation](https://docs.aws.amazon.com/cli/latest
 Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` the to the ARN of your KMS key.
 
 1. Create roles for the Venafi Lambda functions and attach policies to them:
-
-    - for the Venafi Policy Lambda:
+    - For the Venafi Policy Lambda:
         ```bash
         aws iam create-role \
             --role-name VenafiPolicyLambdaRole \
@@ -52,7 +51,7 @@ Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` the to the
             --policy-name VenafiPolicyLambdaRolePolicy \
             --policy-document file://aws-policies/VenafiPolicyLambdaRolePolicy.json
         ```
-    - for the Venafi Request Lambda:
+    - For the Venafi Request Lambda:
         ```bash
         aws iam create-role \
             --role-name VenafiRequestLambdaRole \
@@ -103,8 +102,9 @@ Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` the to the
     ```bash
     aws kms put-key-policy --key-id ${KEY_ID} --policy-name default --policy file://key-policy.json 
     ```
-2. Encrypt the credentials for authenticating with the Venafi service. This will be the TPP password for Venafi Platform
-and the API key for Venafi Cloud.
+    
+1. Encrypt the credentials for authenticating with the Venafi service. This will be the TPP password for Venafi Platform
+or the API key for Venafi Cloud.
     ```bash
     aws kms encrypt --key-id ${KEY_ID} --plaintext <password or API key> | jq -r .CiphertextBlob
     ```
@@ -113,7 +113,7 @@ and the API key for Venafi Cloud.
 
 ### Engineer Instructions
 
-1. Install SAM CLI: https://docs.aws.amazon.com/en_us/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html
+1. Install SAM CLI (see https://docs.aws.amazon.com/en_us/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
 
 1. Login to the AWS web console, select the region where the Venafi Lambda functions will be deployed, then navigate to the
 Serverless Appliation Repository, and select the Available Applications page:
