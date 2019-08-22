@@ -1,0 +1,75 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "lambda:GetAccountSettings",
+        "lambda:GetFunction",
+        "lambda:GetFunctionConfiguration",
+        "lambda:GetPolicy",
+        "lambda:ListFunctions",
+        "lambda:InvokeAsync",
+        "lambda:InvokeFunction",
+        "lambda:UpdateFunctionConfiguration"
+      ],
+      "Resource": [
+        "arn:aws:lambda:*:*:function:serverlessrepo-aws-private-VenafiCertRequestLambda-*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:ListTagsOfResource",
+        "dynamodb:GetItem",
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:PutItem",
+        "dynamodb:Scan",
+        "dynamodb:Query",
+        "dynamodb:UpdateItem"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:*:*:table/VenafiCertPolicy"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:DescribeLogStreams",
+        "logs:CreateLogStream",
+        "logs:GetLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:PutLogEvents",   
+        "logs:GetLogGroupFields"
+      ],
+      "Resource": [
+        "arn:aws:logs:*:*:log-group:*:*:*",
+        "arn:aws:logs:*:*:log-group:*Venafi*Lambda*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "acm:DeleteCertificate",
+        "acm:DescribeCertificate",
+        "acm:ExportCertificate",
+        "acm:GetCertificate",
+        "acm:ImportCertificate",
+        "acm:RenewCertificate",
+        "acm:RequestCertificate",
+        "acm:UpdateCertificateOptions",
+        "acm-pca:GetCertificate",
+        "acm-pca:GetCertificateAuthorityCertificate",
+        "acm-pca:IssueCertificate",
+        "acm-pca:ListCertificateAuthorities",
+        "acm-pca:RevokeCertificate"
+      ],
+      "Resource": [
+        "arn:aws:acm:*:*:*",
+        "arn:aws:acm-pca:*:*:certificate-authority/*"
+      ]
+    }
+  ]
+}

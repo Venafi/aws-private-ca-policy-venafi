@@ -1,0 +1,64 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "lambda:GetAccountSettings",
+        "lambda:GetFunction",
+        "lambda:GetFunctionConfiguration",
+        "lambda:GetPolicy",
+        "lambda:ListFunctions",
+        "lambda:InvokeAsync",
+        "lambda:InvokeFunction",
+        "lambda:UpdateFunctionConfiguration"
+      ],
+      "Resource": [
+        "arn:aws:lambda:*:*:function:serverlessrepo-aws-private-VenafiCertPolicyLambda-*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:ListTagsOfResource",
+        "dynamodb:GetItem",
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:PutItem",
+        "dynamodb:Scan",
+        "dynamodb:Query",
+        "dynamodb:UpdateItem"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:*:*:table/VenafiCertPolicy"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:DescribeLogStreams",
+        "logs:CreateLogStream",
+        "logs:GetLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:PutLogEvents",   
+        "logs:GetLogGroupFields"
+      ],
+      "Resource": [
+        "arn:aws:logs:*:*:log-group:*:*:*",
+        "arn:aws:logs:*:*:log-group:*Venafi*Lambda*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt",
+        "kms:DescribeKey",
+        "kms:Encrypt"
+      ],
+      "Resource": [
+        "YOUR_KMS_KEY_ARN_HERE"
+      ]
+    }
+  ]
+}
