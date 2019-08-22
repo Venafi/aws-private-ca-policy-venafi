@@ -70,37 +70,31 @@ Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` the to the
     ACCT_ID=$(aws sts get-caller-identity | jq -r .Account)
     cat << EOF > key-policy.json
     {
-      "Version" : "2012-10-17",
-      "Statement" : [ {
-        "Sid" : "EnableIAMUserPermissions",
-        "Effect" : "Allow",
-        "Principal" : {
-          "AWS" : "arn:aws:iam::${ACCT_ID}:root"
-        },
-        "Action" : "kms:*",
-        "Resource" : "${KMS_KEY_ARN}"
-      }, {
-        "Sid" : "Allow use of the key",
-        "Effect" : "Allow",
-        "Principal" : {
-          "AWS" : "arn:aws:iam::${ACCT_ID}:role/VenafiPolicyLambdaRole"
-        },
-        "Action" : [ "kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey" ],
-        "Resource" : "${KMS_KEY_ARN}"
-      }, {
-        "Sid" : "Allow attachment of persistent resources",
-        "Effect" : "Allow",
-        "Principal" : {
-          "AWS" : "arn:aws:iam::${ACCT_ID}:role/VenafiPolicyLambdaRole"
-        },
-        "Action" : [ "kms:CreateGrant", "kms:ListGrants", "kms:RevokeGrant" ],
-        "Resource" : "${KMS_KEY_ARN}",
-        "Condition" : {
-          "Bool" : {
-            "kms:GrantIsForAWSResource" : "true"
-          }
-        }
-      } ]
+        "Version": "2012-10-17",
+        "Statement": [ 
+            {
+                "Sid": "EnableIAMUserPermissions",
+                "Effect": "Allow",
+                "Principal": { "AWS": "arn:aws:iam::${ACCT_ID}:root" },
+                "Action": "kms:*",
+                "Resource": "${KMS_KEY_ARN}"
+            }, 
+            {
+                "Sid": "Allow use of the key",
+                "Effect": "Allow",
+                "Principal": { "AWS": "arn:aws:iam::${ACCT_ID}:role/VenafiPolicyLambdaRole" },
+                "Action": [ "kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey" ],
+                "Resource": "${KMS_KEY_ARN}"
+            }, 
+            {
+                "Sid": "Allow attachment of persistent resources",
+                "Effect": "Allow",
+                "Principal": { "AWS": "arn:aws:iam::${ACCT_ID}:role/VenafiPolicyLambdaRole" },
+                "Action": [ "kms:CreateGrant", "kms:ListGrants", "kms:RevokeGrant" ],
+                "Resource": "${KMS_KEY_ARN}",
+                "Condition": { "Bool": { "kms:GrantIsForAWSResource": "true" } }
+            } 
+        ]
     }
     EOF
     ```
