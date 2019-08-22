@@ -112,7 +112,7 @@ Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` the to the
 2. Encrypt the credentials for authenticating with the Venafi service. This will be the TPP password for Venafi Platform
 and the API key for Venafi Cloud.
     ```bash
-    aws kms encrypt --key-id ${KEY_ID} --plaintext veryBigSecret|jq -r .CiphertextBlob
+    aws kms encrypt --key-id ${KEY_ID} --plaintext <password or API key> | jq -r .CiphertextBlob
     ```
     - Provide this encrypted string to the engineer who will deploy Venafi Serverless Application.
 
