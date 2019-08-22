@@ -37,7 +37,7 @@ Please review the [AWS KMS documentation](https://docs.aws.amazon.com/cli/latest
 [VenafiPolicyLambdaRolePolicy.json](aws-policies/VenafiPolicyLambdaRolePolicy.json), 
 [VenafiRequestLambdaRoleTrust.json](aws-policies/VenafiRequestLambdaRoleTrust.json), and
 [VenafiRequestLambdaRolePolicy.json](aws-policies/VenafiRequestLambdaRolePolicy.json).
-Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` the to the ARN of your KMS key.
+Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` to the ARN of your KMS key.
 
 1. Create roles for the Venafi Lambda functions and attach policies to them:
     - For the Venafi Policy Lambda:
@@ -66,25 +66,23 @@ Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` the to the
 1. Edit trust relationships like in the following [guide](https://docs.aws.amazon.com/en_us/directoryservice/latest/admin-guide/edit_trust.html) 
     for the VenafiPolicyLambdaRole and VenafiRequestLambdaRole roles so they look like this:
     ```json
-      "Version": "2012-10-17",
-      "Statement": [
-        {
-          "Effect": "Allow",
-          "Principal": {
-            "Service": [
-              "apigateway.amazonaws.com",
-              "lambda.amazonaws.com"
-            ]
-          },
-          "Action": "sts:AssumeRole"
-        }
-      ]
-    }
-    ```
-    {
-   
-     
-           
+     {
+       "Version": "2012-10-17",
+       "Statement": [
+         {
+           "Effect": "Allow",
+           "Principal": {
+             "Service": [
+               "apigateway.amazonaws.com",
+               "lambda.amazonaws.com"
+             ]
+           },
+           "Action": "sts:AssumeRole"
+         }
+       ]
+     }
+    ```   
+               
 1. Create KMS key policy for venafi lambda:
     ```bash
     KMS_KEY_ARN=$(aws kms describe-key --key-id alias/venafi-encryption-key | jq .KeyMetadata.Arn)
