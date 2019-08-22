@@ -83,7 +83,27 @@ Additionally you can add `VenafiZone` parameter to indicate the request should b
     aws iam put-role-policy --role-name VenafiRequestLambdaRole --policy-name VenafiRequestLambdaPolicy --policy-document file://aws-policies/VenafiRequestLambdaPolicy.json
     ```
 
-1. Add trust relationship to VenafiLambda policy (apigateway.amazonaws.com, lambda.amazonaws.com)     
+1. Edit trust relationships like in the following [guide](https://docs.aws.amazon.com/en_us/directoryservice/latest/admin-guide/edit_trust.html) 
+    for the VenafiPolicyLambdaRole and VenafiRequestLambdaRole roles so they look like this:
+    ```json
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Principal": {
+            "Service": [
+              "apigateway.amazonaws.com",
+              "lambda.amazonaws.com"
+            ]
+          },
+          "Action": "sts:AssumeRole"
+        }
+      ]
+    }
+    ```
+    {
+   
+     
            
 - Create KMS key policy for venafi lambda:
     ```bash
