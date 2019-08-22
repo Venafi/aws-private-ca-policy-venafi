@@ -142,7 +142,7 @@ contents of your PEM trust bundle in the `TrustBundle` parameter. This string ca
 
 1. Change `DEFAULTZONE` parameter to the name of the zone that will be used when none is specified in the request.
  
-1. Click Deploy button to deploy cloudformation stack and wait untill deploy is finished.
+1. Click the Deploy button to deploy the CloudFormation stack for this solution and wait until the deployment is finished.
     
 1. Add the `DEFAULTZONE` zone (and any other zones you want to pre-load) to the database so the Venafi policy will be retrieved:
     ```bash
