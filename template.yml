@@ -102,7 +102,7 @@ Resources:
       Description: Venfi policy with a RESTful API endpoint using Amazon API Gateway.
       MemorySize: 512
       Timeout: 10
-      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${RequestLambdaRole}'
+      Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${PolicyLambdaRole}'
       Environment:
         Variables:
           TPPUSER: !Ref  TPPUSER
