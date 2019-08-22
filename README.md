@@ -234,16 +234,16 @@ aws cloudformation wait stack-delete-complete --stack-name serverlessrepo-aws-pr
 1. Create SAM package, it will also deploy Lambda binary to S3:
     ```bash
     sam package \
-            --output-template-file packaged.yaml \
-            --s3-bucket venafi-policy-sam
+        --output-template-file packaged.yaml \
+        --s3-bucket venafi-policy-sam
     ```
 
 1. Deploy the SAM package to AWS:
     ```bash
     sam deploy \
-            --template-file packaged.yaml \
-            --stack-name private-ca-policy-venafi \
-            --capabilities CAPABILITY_IAM \
+        --template-file packaged.yaml \
+        --stack-name private-ca-policy-venafi \
+        --capabilities CAPABILITY_IAM \
         --region <put your region here>
     ```
 
