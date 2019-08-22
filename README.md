@@ -114,7 +114,7 @@ and the API key for Venafi Cloud.
     ```bash
     aws kms encrypt --key-id ${KEY_ID} --plaintext <password or API key> | jq -r .CiphertextBlob
     ```
-    - Provide this encrypted string to the engineer who will deploy Venafi Serverless Application.
+    - Provide this encrypted string to the engineer who will deploy this Venafi serverless application.
 
 
 ### Engineer Instructions
