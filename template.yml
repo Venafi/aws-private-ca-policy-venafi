@@ -55,6 +55,7 @@ Resources:
     Properties:
       Name: VenafiLambdaApi
       StageName: v1
+#      TODO: fix API gatewy logging enable
 #      MethodSettings:
 #        - LoggingLevel: ERROR
 #          MetricsEnabled: true
