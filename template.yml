@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Venafi policy integration for AWS Private CA.
+Description: Venafi policy enforcement for AWS Private CA.
 
 Metadata:
   AWS::ServerlessRepo::Application:
@@ -69,7 +69,7 @@ Resources:
       Handler: cert-request
       Runtime: go1.x
       CodeUri: dist/cert-request
-      Description: Venfi request with a RESTful API endpoint using Amazon API Gateway.
+      Description: Venafi request with a RESTful API endpoint using Amazon API Gateway.
       MemorySize: 512
       Timeout: 10
       #TODO: provide json for creating a role
@@ -99,7 +99,7 @@ Resources:
       Handler: cert-policy
       Runtime: go1.x
       CodeUri: dist/cert-policy
-      Description: Venfi policy with a RESTful API endpoint using Amazon API Gateway.
+      Description: Venafi policy with a RESTful API endpoint using Amazon API Gateway.
       MemorySize: 512
       Timeout: 10
       Role: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${PolicyLambdaRole}'
