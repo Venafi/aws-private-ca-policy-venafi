@@ -38,8 +38,9 @@ def issue(url, policy, csr, arn):
     print(data_response)
 
 
-def request(url, policy, domain):
-    body_request = {"DomainName": domain}
+def request(url, policy, domain, arn):
+    body_request = {"DomainName": domain,
+                    "CertificateAuthorityArn": arn}
     if policy:
         body_request["VenafiZone"] = policy
     target = "CertificateManagerRequestCertificate"
@@ -70,7 +71,7 @@ def main():
     if args.action[0] == "issue":
         issue(args.url, args.policy, args.csr, args.arn)
     elif args.action[0] == "request":
-        request(args.url, args.policy, args.domain)
+        request(args.url, args.policy, args.domain, args.arn)
 
 
 if __name__ == '__main__':
