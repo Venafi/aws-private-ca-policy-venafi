@@ -85,7 +85,7 @@ Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` to the ARN
                
 1. Create KMS key policy for venafi lambda:
     ```bash
-    KMS_KEY_ARN=$(aws kms describe-key --key-id alias/venafi-encryption-key | jq .KeyMetadata.Arn)
+    KMS_KEY_ARN=$(aws kms describe-key --key-id alias/venafi-encryption-key | jq -r .KeyMetadata.Arn)
     ACCT_ID=$(aws sts get-caller-identity | jq -r .Account)
     cat << EOF > key-policy.json
     {
