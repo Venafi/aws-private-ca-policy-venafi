@@ -142,10 +142,11 @@ https://us-east-1.console.aws.amazon.com/serverlessrepo/home?region=us-east-1#/a
 1. Search for "aws-private-ca-policy-venafi" and open it.
 
 1. Enter the appropriate connection parameters for the Venafi service you are using.  `CLOUDAPIKEY` (encrypted string provided by
-your IAM administrator) for Venafi Cloud or `TPPURL`, `TPPUSER`, and `TPPPASSWORD` (encrypted string provided by your IAM administrator)
+your IAM administrator) and `CLOUDURL` for Venafi Cloud or `TPPURL`, `TPPUSER`, and `TPPPASSWORD` (encrypted string provided by your IAM administrator)
 for Venafi Platform.
 
-1. In most cases for Venafi Platform you will need to specify a trust bundle because the Venafi Platform is commonly secured
+1. **NOTE**: The `TrustBundle` parameter is not needed in deployments that will be using Venafi Cloud.
+In most cases for Venafi Platform you will need to specify a trust bundle because the Venafi Platform is commonly secured
 using a certificate issued by a private enterprise PKI.  Do this by entering the base64-encoded string that represents the
 contents of your PEM trust bundle in the `TrustBundle` parameter. This string can be obtained using the following:
     ```bash
@@ -154,7 +155,9 @@ contents of your PEM trust bundle in the `TrustBundle` parameter. This string ca
 
 1. To allow automatic retrieval of Venafi policy when a zone is requested that isn't been loaded, set `SavePolicyFromRequest` to "true".
 
-1. Change `DEFAULTZONE` parameter to the name of the zone that will be used when none is specified in the request.
+1. Change `DEFAULTZONE` parameter to the name of the zone that will be used when none is specified in the request. 
+**NOTE**: The `DEFAULTZONE` parameter will be the UUID value of the zone in Venafi Cloud deployments. If you use the human readable name,
+you will get a 404 error once the lambda function is deployed.
  
 1. Click the Deploy button to deploy the CloudFormation stack for this solution and wait until the deployment is finished.
     
@@ -162,6 +165,13 @@ contents of your PEM trust bundle in the `TrustBundle` parameter. This string ca
     ```bash
     aws dynamodb put-item --table-name VenafiCertPolicy --item '{"PolicyID": {"S":"Default"}}'
     ```
+
+OR (for Venafi Cloud)
+
+    ```bash
+    aws dynamodb put-item --table-name VenafiCertPolicy --item '{"PolicyID": {"S":"d2b3xxxx-xxxx-xxxx-xxxx-xxxxxxx72b1"}}'
+    ```
+
 1. Check the logs to verify the Venafi Lambda functions are working propertly and the Venafi policy is retrieved: 
     ```bash
     sam logs -n VenafiCertPolicyLambda --stack-name serverlessrepo-aws-private-ca-policy-venafi
@@ -171,6 +181,9 @@ contents of your PEM trust bundle in the `TrustBundle` parameter. This string ca
     ```bash
     aws dynamodb get-item --table-name VenafiCertPolicy --key '{"PolicyID": {"S":"Default"}}'
     ```    
+**NOTE**: This should return a JSON response with your policy, if this isn't return, confirm to make sure
+you have your zone configure correctly.
+
 1. To get the URL of the API Gateway endpoint:
     ```bash
     aws cloudformation describe-stacks --stack-name serverlessrepo-aws-private-ca-policy-venafi | jq -r .Stacks[].Outputs[].OutputValue
@@ -184,7 +197,8 @@ contents of your PEM trust bundle in the `TrustBundle` parameter. This string ca
 ## Requesting Certificates
 
 The API for this solution is intentionally almost identical to the Amazon ACM API. Sample client code that demonstrates API usage
-is provided in the [client-example/cli.py](client-example/cli.py).  With it you can request a certificate from ACM Private CA (PCA) where ACM generates the key pair and CSR:
+is provided in the [client-example/cli.py](client-example/cli.py).  **NOTE**: Ensure you have the proper packages installed and you're using python3.
+With it you can request a certificate from ACM Private CA (PCA) where ACM generates the key pair and CSR:
 ```bash
 ./cli.py request --domain "example.example.com" --base-url "https://abcde12345.execute-api.us-east-1.amazonaws.com/v1/request" --policy Default --arn "arn:aws:acm-pca:us-east-1:123456789000:certificate-authority/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 ```
