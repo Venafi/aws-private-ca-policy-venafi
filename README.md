@@ -166,7 +166,7 @@ you will get a 404 error once the lambda function is deployed.
     aws dynamodb put-item --table-name VenafiCertPolicy --item '{"PolicyID": {"S":"Default"}}'
     ```
 
-OR (for Venafi Cloud)
+    OR (for Venafi Cloud)
 
     ```bash
     aws dynamodb put-item --table-name VenafiCertPolicy --item '{"PolicyID": {"S":"d2b3xxxx-xxxx-xxxx-xxxx-xxxxxxx72b1"}}'
@@ -181,8 +181,9 @@ OR (for Venafi Cloud)
     ```bash
     aws dynamodb get-item --table-name VenafiCertPolicy --key '{"PolicyID": {"S":"Default"}}'
     ```    
-**NOTE**: This should return a JSON response with your policy, if this isn't return, confirm to make sure
-you have your zone configure correctly.
+    
+    **NOTE**: This should return a JSON response with your policy, if this isn't return, confirm to make sure
+    you have your zone configure correctly.
 
 1. To get the URL of the API Gateway endpoint:
     ```bash
