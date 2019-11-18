@@ -197,10 +197,20 @@ With it you can request a certificate from ACM Private CA (PCA) where ACM genera
 ```bash
 ./cli.py request --domain "example.example.com" --base-url "https://abcde12345.execute-api.us-east-1.amazonaws.com/v1/request" --policy Default --arn "arn:aws:acm-pca:us-east-1:123456789000:certificate-authority/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 ```
+
+The output will be a certificate arn. e.g: `arn:aws:acm:us-east-1:123456789000:certificate/xxxxxxxx-yyyy-yyyy-yyyy-zzzzzzzzzzzz`.
+This certificate will also be listed in the AWS Console under Certicate Manager.
+
 Or you can request a certificate by providing your own CSR for the PCA to sign:
 ```bash
 ./cli.py issue --csr-path "/home/user/csr.pem" --base-url "https://abcde12345.execute-api.us-east-1.amazonaws.com/v1/request" --policy Default --arn "arn:aws:acm-pca:us-east-1:123456789000:certificate-authority/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 ```
+
+Because this command uses PCA to issue a certificate, it will not be listed within the AWS Console. To obtain the issued certificate run: 
+```bash
+aws acm-pca get-certificate --certificate-arn "arn:aws:acm-pca:us-east-1:123456789000:certificate-authority/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee/certificate/xxxxxxxx-yyyy-yyyy-yyyy-zzzzzzzzzzzz" --certificate-authority-arn "arn:aws:acm-pca:us-east-1:123456789000:certificate-authority/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+```
+This will output a certificate and certificate chain. For more information, check out the documentation on acm-pca cli commands: https://docs.aws.amazon.com/cli/latest/reference/acm-pca/index.html 
 
 ### Sample request body using a CSR
 
