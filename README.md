@@ -199,7 +199,9 @@ With it you can request a certificate from ACM Private CA (PCA) where ACM genera
 ```
 
 The output will be a certificate arn. e.g: `arn:aws:acm:us-east-1:123456789000:certificate/xxxxxxxx-yyyy-yyyy-yyyy-zzzzzzzzzzzz`.
-This certificate will also be listed in the AWS Console under Certicate Manager.
+This certificate will also be listed in the AWS Console under Certificate Manager.
+
+
 
 Or you can request a certificate by providing your own CSR for the PCA to sign:
 ```bash
