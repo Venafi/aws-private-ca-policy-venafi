@@ -18,14 +18,14 @@ Complete step 1 with no changes and complete step 2 by changing the value of the
 Skip step 3, we already set up the PCA in the Venafi based instructions. 
 
 Before we move on to step 4, we need to set the variable CERTIFICATE_ARN with the certificate we want to use. This can be done by running something like this (edit the command to with the right domain, base-url, policy and arn value. For more information go back to the 'Requesting Certificates' section in the Venafi README):
-    ```bash
+```bash
     export CERTIFICATE_ARN=`cli-appmesh.py request --domain "*.example.com" --base-url https://1234abcdzz.execute-api.us-west-2.amazonaws.com/v1/request/ --policy zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzzz --arn "arn:aws:acm-pca:us-west-2:11122233344:certificate-authority/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" | jq -r .CertificateArn`
-    ```
+```
 
 **Note:** Make sure you're running this Python script with Python3 (or it wont work) and that you're in the right folder (/client-example/app-mesh-example/)
 
 If ran correctly you should get your certificate arn returned within the CERTIFICATE_ARN variable. Feel free to check by running: 
-```
+```bash
 echo $CERTIFICATE_ARN 
 ```
 
