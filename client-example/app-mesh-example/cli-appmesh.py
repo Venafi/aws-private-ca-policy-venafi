@@ -4,6 +4,7 @@ import requests
 import argparse
 import requests_aws4auth
 import configparser
+import json
 import os.path as path
 
 
@@ -18,7 +19,7 @@ def aws_request(url, data, operation):
     req = requests.Request('POST', url=url, json=data, auth=a, headers={"Content-Type": "application/json", "X-Amz-Target": operation})
     prepared = req.prepare()
     r = requests.Session().send(prepared)
-    return r.status_code, r.json()
+    return json.dumps(r.json())
 
 
 def issue(url, policy, csr, arn):
@@ -30,11 +31,7 @@ def issue(url, policy, csr, arn):
     if policy:
         body_request["VenafiZone"] = policy
     target = "ACMPrivateCAIssueCertificate"
-    status_code, data_response = aws_request(url, body_request, target)
-    if status_code == 200:
-        print("Success:")
-    else:
-        print("Error:")
+    data_response = aws_request(url, body_request, target)
     print(data_response)
 
 
@@ -44,11 +41,7 @@ def request(url, policy, domain, arn):
     if policy:
         body_request["VenafiZone"] = policy
     target = "CertificateManagerRequestCertificate"
-    status_code, data_response = aws_request(url, body_request, target)
-    if status_code == 200:
-        print("Success:")
-    else:
-        print("Error:")
+    data_response = aws_request(url, body_request, target)
     print(data_response)
 
 
