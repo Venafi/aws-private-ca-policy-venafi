@@ -159,7 +159,7 @@ contents of your PEM trust bundle in the `TrustBundle` parameter. This string ca
     ``` 
     **NOTE**: The `TrustBundle` parameter is not needed in deployments that will be using Venafi Cloud.
 
-1. To allow automatic retrieval of Venafi policy when a zone is requested that isn't been loaded, set `SavePolicyFromRequest` to "true".
+1. To allow automatic retrieval of Venafi policy when a zone is requested that hasn't been loaded, set `SavePolicyFromRequest` to "true".
 
 1. Change `DEFAULTZONE` parameter to the name of the zone that will be used when none is specified in the request. 
 This will be the UUID value of the zone in Venafi Cloud deployments (e.g. "zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzz"). 
