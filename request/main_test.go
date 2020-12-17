@@ -257,6 +257,7 @@ func randSeq(n int) string {
 	}
 	return string(b)
 }
+
 func getACMPCAArn(t *testing.T) string {
 	arnListReq, err := ACMPCAHandler(events.APIGatewayProxyRequest{
 		Body:    acmpcaListCertificateAuthoritiesRequest,

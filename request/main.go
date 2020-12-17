@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Venafi/aws-private-ca-policy-venafi/common"
-	"github.com/Venafi/vcert/pkg/certificate"
+	"github.com/Venafi/vcert/v4/pkg/certificate"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
