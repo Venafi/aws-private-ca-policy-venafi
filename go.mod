@@ -1,6 +1,6 @@
 module github.com/Venafi/aws-private-ca-policy-venafi
 
-go 1.12
+go 1.13
 
 require (
 	github.com/Venafi/vcert/v4 v4.11.1
