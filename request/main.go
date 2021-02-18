@@ -100,7 +100,7 @@ func venafiACMPCAIssueCertificateRequest(request events.APIGatewayProxyRequest) 
 	}
 	policy, err := common.GetPolicy(certRequest.VenafiZone)
 	if err == common.PolicyNotFound {
-		return handlePolcyNotFound(certRequest.VenafiZone)
+		return handlePolicyNotFound(certRequest.VenafiZone)
 	} else if err != nil {
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed to get policy from database: %s", err))
 	}
@@ -154,7 +154,7 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 	}
 	policy, err := common.GetPolicy(certRequest.VenafiZone)
 	if err == common.PolicyNotFound {
-		return handlePolcyNotFound(certRequest.VenafiZone)
+		return handlePolicyNotFound(certRequest.VenafiZone)
 	} else if err != nil {
 		log.Println(err)
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Failed to get policy from database: %s", err))
@@ -191,7 +191,7 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 	}, nil
 }
 
-func handlePolcyNotFound(venafiZone string) (events.APIGatewayProxyResponse, error) {
+func handlePolicyNotFound(venafiZone string) (events.APIGatewayProxyResponse, error) {
 	savePolicy := os.Getenv("SAVE_POLICY_FROM_REQUEST") == "true"
 	if !savePolicy {
 		return clientError(http.StatusFailedDependency, fmt.Sprintf("Policy not exist in database."))
@@ -219,11 +219,12 @@ func clientError(status int, body string) (events.APIGatewayProxyResponse, error
 	}, nil
 }
 
-func init() {
-	d := os.Getenv("DEFAULT_ZONE")
+func InitHandler() {
+	d := os.Getenv("DEFAULTZONE")
 	if d != "" {
 		defaultZone = d
 	}
+	log.Printf("Default zone is: %s", defaultZone)
 }
 
 func main() {

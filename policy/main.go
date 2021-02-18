@@ -149,6 +149,7 @@ func getConnection(tppUrl, tppUser, tppPassword, accessToken, refreshToken, apiK
 			Credentials: &endpoint.Authentication{
 				AccessToken:  accessToken,
 				RefreshToken: refreshToken,
+				ClientId:     ClientId,
 			},
 		}
 	} else if apiKey != "" {
@@ -160,7 +161,7 @@ func getConnection(tppUrl, tppUser, tppPassword, accessToken, refreshToken, apiK
 		}
 
 	} else {
-		panic("bad credentials for connection") //todo: replace with something more beatifull
+		panic("bad credentials for connection") //todo: replace with something more beautiful
 	}
 
 	if config.ConnectorType == endpoint.ConnectorTypeTPP && trustBundle != "" {
@@ -177,9 +178,9 @@ func getConnection(tppUrl, tppUser, tppPassword, accessToken, refreshToken, apiK
 	if config.ConnectorType == endpoint.ConnectorTypeTPP && config.Credentials.RefreshToken != "" {
 		newAuth, err := consumeToken(&config)
 		if err != nil {
-
+			log.Printf("Error while consuming refresh token: %v\n", err)
+			return nil, err
 		}
-
 		config.Credentials = &newAuth
 	}
 
@@ -202,11 +203,12 @@ func consumeToken(cfg *vcert.Config) (auth endpoint.Authentication, err error) {
 
 	tokenInfoResponse, err := tppConnector.RefreshAccessToken(&endpoint.Authentication{
 		RefreshToken: cfg.Credentials.RefreshToken,
-		ClientId:     "vcert-sdk",
-		Scope:        "certificate:manage,revoke",
+		ClientId:     ClientId,
+		Scope:        Scope,
 	})
 
 	if err != nil {
+		log.Printf("Error while refreshing access token: %v\n", err)
 		return
 	}
 
@@ -215,8 +217,8 @@ func consumeToken(cfg *vcert.Config) (auth endpoint.Authentication, err error) {
 		Password:     cfg.Credentials.Password,
 		APIKey:       cfg.Credentials.APIKey,
 		RefreshToken: tokenInfoResponse.Refresh_token,
-		Scope:        cfg.Credentials.Scope,
-		ClientId:     cfg.Credentials.ClientId,
+		Scope:        Scope,
+		ClientId:     ClientId,
 		AccessToken:  tokenInfoResponse.Access_token,
 		ClientPKCS12: cfg.Credentials.ClientPKCS12,
 	}

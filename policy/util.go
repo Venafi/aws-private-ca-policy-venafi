@@ -11,6 +11,9 @@ import (
 	"time"
 )
 
+const ClientId = "aws-private-ca-by-venafi"
+const Scope = "certificate:manage"
+
 func getTppConnector(cfg *vcert.Config) (*tpp.Connector, error) {
 
 	connectionTrustBundle, error := parseTrustBundlePEM(cfg.ConnectionTrust)
