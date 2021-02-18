@@ -13,8 +13,11 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/acmpca"
+	"go/types"
 	"log"
 	mrand "math/rand"
+	"net/http"
+	"strings"
 	"testing"
 	"time"
 )
@@ -152,10 +155,8 @@ func TestACMCertificate(t *testing.T) {
 	headers = map[string]string{"X-Amz-Target": acmGetCertificate}
 	jsonBody = fmt.Sprintf(acmGetCertificateRequest, issueResponse.CertificateArn)
 
-	requestCertResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
-		Body:    jsonBody,
-		Headers: headers,
-	})
+	requestCertResp, err := waitForCertificate(headers, jsonBody, 120000)
+
 	if err != nil {
 		t.Fatalf("Cant get certificate: %s", err)
 	}
@@ -269,4 +270,36 @@ func getACMPCAArn(t *testing.T) string {
 		t.Fatalf("ACMPCA is empty")
 	}
 	return arn
+}
+
+//waitForCertificate loops until the certificate gets issued or time runs out.
+//This is necessary when the certificate has been recently requested.
+func waitForCertificate(headers map[string]string, jsonBody string, timeout int) (events.APIGatewayProxyResponse, error) {
+	timeSlept := 0
+
+	var err = types.Error{}
+
+	for timeSlept < timeout {
+		requestCertResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
+			Body:    jsonBody,
+			Headers: headers,
+		})
+
+		if err != nil {
+			return requestCertResp, err
+		}
+
+		if requestCertResp.StatusCode != 200 {
+			if strings.Contains(requestCertResp.Body, "RequestInProgressException") {
+				time.Sleep(10 * time.Second)
+				timeSlept += 10000
+			} else {
+				return clientError(http.StatusInternalServerError, fmt.Sprintf("Could not get certificate: %s", err))
+			}
+		} else {
+			return requestCertResp, nil
+		}
+	}
+
+	return clientError(http.StatusInternalServerError, fmt.Sprintf("Could not get certificate: %s", err))
 }
