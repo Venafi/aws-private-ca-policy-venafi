@@ -60,6 +60,7 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	ctx := context.TODO()
 	target := request.Headers["X-Amz-Target"]
 	log.Println("ACMPCAHandler started. Parsing header", target)
+	InitHandler()
 	switch target {
 	case acmpcaIssueCertificate:
 		return venafiACMPCAIssueCertificateRequest(request)
@@ -192,15 +193,17 @@ func venafiACMRequestCertificate(request events.APIGatewayProxyRequest) (events.
 }
 
 func handlePolicyNotFound(venafiZone string) (events.APIGatewayProxyResponse, error) {
+	log.Println("Policy not found, handling...")
+
 	savePolicy := os.Getenv("SAVE_POLICY_FROM_REQUEST") == "true"
 	if !savePolicy {
-		return clientError(http.StatusFailedDependency, fmt.Sprintf("Policy not exist in database."))
+		return clientError(http.StatusFailedDependency, fmt.Sprintf("Policy %s not exist in database.", venafiZone))
 	}
 	err := common.CreateEmptyPolicy(venafiZone)
 	if err != nil {
 		return clientError(http.StatusFailedDependency, err.Error())
 	}
-	return clientError(http.StatusFailedDependency, fmt.Sprintf("Policy not exist in database. Policy creation is scheduled in policy lambda"))
+	return clientError(http.StatusFailedDependency, fmt.Sprintf("Policy %s not exist in database. Policy creation is scheduled in policy lambda", venafiZone))
 
 }
 
@@ -220,7 +223,7 @@ func clientError(status int, body string) (events.APIGatewayProxyResponse, error
 }
 
 func InitHandler() {
-	d := os.Getenv("DEFAULTZONE")
+	d := os.Getenv("DEFAULT_ZONE")
 	if d != "" {
 		defaultZone = d
 	}
