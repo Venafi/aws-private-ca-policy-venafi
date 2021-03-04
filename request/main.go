@@ -60,7 +60,7 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	ctx := context.TODO()
 	target := request.Headers["X-Amz-Target"]
 	log.Println("ACMPCAHandler started. Parsing header", target)
-	InitHandler()
+	initHandler()
 	switch target {
 	case acmpcaIssueCertificate:
 		return venafiACMPCAIssueCertificateRequest(request)
@@ -222,7 +222,7 @@ func clientError(status int, body string) (events.APIGatewayProxyResponse, error
 	}, nil
 }
 
-func InitHandler() {
+func initHandler() {
 	d := os.Getenv("DEFAULT_ZONE")
 	if d != "" {
 		defaultZone = d
