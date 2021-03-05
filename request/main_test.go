@@ -62,8 +62,6 @@ func TestACMPCACertificate(t *testing.T) {
 
 	headers := map[string]string{"X-Amz-Target": acmpcaIssueCertificate}
 
-	log.Printf("Request: %s", jsonBody)
-
 	issueCertResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
 		Body:    jsonBody,
 		Headers: headers,
@@ -130,8 +128,6 @@ func TestACMCertificate(t *testing.T) {
 	acmpcaArn := getACMPCAArn(t)
 
 	jsonBody := fmt.Sprintf(acmRequestCertificateRequest, acmpcaArn, cn)
-
-	log.Printf("Request: %s", jsonBody)
 
 	headers := map[string]string{"X-Amz-Target": acmRequestCertificate}
 

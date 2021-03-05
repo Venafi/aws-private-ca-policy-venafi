@@ -60,6 +60,7 @@ func ACMPCAHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	ctx := context.TODO()
 	target := request.Headers["X-Amz-Target"]
 	log.Println("ACMPCAHandler started. Parsing header", target)
+	log.Printf("Request: %s", request.Body)
 	initHandler()
 	switch target {
 	case acmpcaIssueCertificate:
