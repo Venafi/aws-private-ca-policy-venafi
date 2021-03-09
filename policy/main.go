@@ -132,17 +132,8 @@ func main() {
 func getConnection(tppUrl, tppUser, tppPassword, accessToken, refreshToken, apiKey, trustBundle string) (endpoint.Connector, error) {
 	log.Println("Getting Venafi connection")
 	var config vcert.Config
-	if tppUrl != "" && tppUser != "" && tppPassword != "" {
-		config = vcert.Config{
-			ConnectorType: endpoint.ConnectorTypeTPP,
-			BaseUrl:       tppUrl,
-			Credentials: &endpoint.Authentication{
-				User:     tppUser,
-				Password: tppPassword,
-			},
-		}
 
-	} else if tppUrl != "" && (accessToken != "" || refreshToken != "") {
+	if tppUrl != "" && (accessToken != "" || refreshToken != "") {
 		config = vcert.Config{
 			ConnectorType: endpoint.ConnectorTypeTPP,
 			BaseUrl:       tppUrl,
@@ -150,6 +141,15 @@ func getConnection(tppUrl, tppUser, tppPassword, accessToken, refreshToken, apiK
 				AccessToken:  accessToken,
 				RefreshToken: refreshToken,
 				ClientId:     ClientId,
+			},
+		}
+	} else if tppUrl != "" && tppUser != "" && tppPassword != "" {
+		config = vcert.Config{
+			ConnectorType: endpoint.ConnectorTypeTPP,
+			BaseUrl:       tppUrl,
+			Credentials: &endpoint.Authentication{
+				User:     tppUser,
+				Password: tppPassword,
 			},
 		}
 	} else if apiKey != "" {

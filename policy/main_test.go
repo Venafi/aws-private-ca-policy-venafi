@@ -32,7 +32,7 @@ func TestHandleRequestTPP(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	testHandleRequest(t, os.Getenv("TPPZONE"), "UnexistedZone\\Olololololo", ".*")
+	testHandleRequest(t, os.Getenv("TPPZONE"), "InvalidZone\\Olololololo", ".*")
 }
 
 func TestHandleRequestTPPToken(t *testing.T) {
@@ -49,7 +49,7 @@ func TestHandleRequestTPPToken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	testHandleRequest(t, os.Getenv("TPPZONE"), "UnexistedZone\\Olololololo", ".*")
+	testHandleRequest(t, os.Getenv("TPPZONE"), "InvalidZone\\Olololololo", ".*")
 }
 
 func testHandleRequest(t *testing.T, zoneName, invalidZone, checkRegexp string) {
