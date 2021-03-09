@@ -13,30 +13,36 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/acmpca"
+	"go/types"
+	"log"
 	mrand "math/rand"
+	"net/http"
+	"strings"
 	"testing"
 	"time"
 )
 
 const (
 	wrongResponseCode = "Request returned code: %d message: %s"
-)
-const (
-	acmpcaIssueCertificateRequest = `{
+
+	acmpcaListCertificateAuthoritiesRequest = `{"MaxResults": 100}`
+	acmpcaIssueCertificateRequest           = `{
 		"SigningAlgorithm":"SHA256WITHRSA",
 		"Validity": {"Type": "DAYS","Value": 365},
-		"CertificateAuthorityArn": "%s","Csr": "%s"
+		"CertificateAuthorityArn": "%s",
+		"Csr": "%s"
+	}`
+	acmpcaGetCertificateRequest = `{
+		"CertificateArn": "%s",
+		"CertificateAuthorityArn": "%s"
 	}`
 
 	acmRequestCertificateRequest = `{
    		"CertificateAuthorityArn": "%s",
    		"DomainName": "%s"
 	}`
-
-	acmpcaListCertificateAuthoritiesRequest = `{"MaxResults": 100}`
-	acmpcaGetCertificateRequest             = `{
-		"CertificateArn": "%s",
-		"CertificateAuthorityArn": "%s"
+	acmGetCertificateRequest = `{
+		"CertificateArn": "%s"
 	}`
 )
 
@@ -82,6 +88,8 @@ func TestACMPCACertificate(t *testing.T) {
 		CertificateAuthorityArn: &acmpcaArn,
 	}
 
+	log.Printf("Certificate CN is:%s\nCertificate Arn is: %s", cn, issueResponse.CertificateArn)
+
 	err = acmpcaCli.WaitUntilCertificateIssued(ctx, getReq)
 	if err != nil {
 		t.Fatalf("Error while waiting for certificate: %s\n", err)
@@ -116,18 +124,10 @@ func TestACMPCACertificate(t *testing.T) {
 }
 
 func TestACMCertificate(t *testing.T) {
-	ctx := context.TODO()
-
-	awsCfg, err := external.LoadDefaultAWSConfig()
-	if err != nil {
-		t.Fatalf("Can't get AWS configuration: %s", err)
-	}
-
 	cn := randSeq(9) + ".example.com"
 	acmpcaArn := getACMPCAArn(t)
 
 	jsonBody := fmt.Sprintf(acmRequestCertificateRequest, acmpcaArn, cn)
-	base64.StdEncoding.EncodeToString(createCSR(cn))
 
 	headers := map[string]string{"X-Amz-Target": acmRequestCertificate}
 
@@ -148,25 +148,13 @@ func TestACMCertificate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Cant process response json: %s", err)
 	}
+	log.Printf("Certificate CN is:%s\nCertificate Arn is: %s", cn, issueResponse.CertificateArn)
 
-	headers = map[string]string{"X-Amz-Target": acmpcaGetCertificate}
-	jsonBody = fmt.Sprintf(acmpcaGetCertificateRequest, issueResponse.CertificateArn, acmpcaArn)
+	headers = map[string]string{"X-Amz-Target": acmGetCertificate}
+	jsonBody = fmt.Sprintf(acmGetCertificateRequest, issueResponse.CertificateArn)
 
-	getReq := &acmpca.GetCertificateInput{
-		CertificateArn:          &issueResponse.CertificateArn,
-		CertificateAuthorityArn: &acmpcaArn,
-	}
+	requestCertResp, err := waitForCertificate(headers, jsonBody, 120000)
 
-	acmpcaCli := acmpca.New(awsCfg)
-	err = acmpcaCli.WaitUntilCertificateIssued(ctx, getReq)
-	if err != nil {
-		t.Fatalf("Error while waiting for certificate: %s\n", err)
-	}
-
-	requestCertResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
-		Body:    jsonBody,
-		Headers: headers,
-	})
 	if err != nil {
 		t.Fatalf("Cant get certificate: %s", err)
 	}
@@ -257,6 +245,7 @@ func randSeq(n int) string {
 	}
 	return string(b)
 }
+
 func getACMPCAArn(t *testing.T) string {
 	arnListReq, err := ACMPCAHandler(events.APIGatewayProxyRequest{
 		Body:    acmpcaListCertificateAuthoritiesRequest,
@@ -279,4 +268,36 @@ func getACMPCAArn(t *testing.T) string {
 		t.Fatalf("ACMPCA is empty")
 	}
 	return arn
+}
+
+//waitForCertificate loops until the certificate gets issued or time runs out.
+//This is necessary when the certificate has been recently requested.
+func waitForCertificate(headers map[string]string, jsonBody string, timeout int) (events.APIGatewayProxyResponse, error) {
+	timeSlept := 0
+
+	var err = types.Error{}
+
+	for timeSlept < timeout {
+		requestCertResp, err := ACMPCAHandler(events.APIGatewayProxyRequest{
+			Body:    jsonBody,
+			Headers: headers,
+		})
+
+		if err != nil {
+			return requestCertResp, err
+		}
+
+		if requestCertResp.StatusCode != 200 {
+			if strings.Contains(requestCertResp.Body, "RequestInProgressException") {
+				time.Sleep(10 * time.Second)
+				timeSlept += 10000
+			} else {
+				return clientError(http.StatusInternalServerError, fmt.Sprintf("Could not get certificate: %s", err))
+			}
+		} else {
+			return requestCertResp, nil
+		}
+	}
+
+	return clientError(http.StatusInternalServerError, fmt.Sprintf("Could not get certificate: %s", err))
 }
