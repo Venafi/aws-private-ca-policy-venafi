@@ -178,8 +178,7 @@ contents of your PEM trust bundle in the `TrustBundle` parameter. This string ca
 
 1. Change `DEFAULTZONE` parameter to the name of the zone that will be used when none is specified in the request. 
     - For Venafi Platform, this will be a policy folder reference (e.g. "Amazon\\PCA Policy"). 
-    - For Venafi Cloud, this will be the Application Name and Issuing Template API Alias
-    (e.g. "Business App\Enterprise CIT"). 
+    - For Venafi Cloud, this will be the Application Name and Issuing Template API Alias<br/>(e.g. "Business App\Enterprise CIT"). 
  
 1. Click the Deploy button to deploy the CloudFormation stack for this solution and wait until the deployment is finished.
     
