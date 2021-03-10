@@ -149,8 +149,22 @@ https://us-east-1.console.aws.amazon.com/serverlessrepo/home?region=us-east-1#/a
 
 1. Search for "aws-private-ca-policy-venafi" and open it.
 
-1. Enter the appropriate connection parameters for the Venafi service you are using.  `CLOUDAPIKEY` (encrypted string provided by
-your IAM administrator) and `CLOUDURL` (only if you have been given access to a special stack for testing) for Venafi Cloud or `TPPURL`, `TPPUSER`, and `TPPPASSWORD` (encrypted string provided by your IAM administrator) for Venafi Platform.
+1. Enter the appropriate connection parameters for the Venafi service you are using.
+    
+    For Venafi Platform:
+    - `TPPURL`  
+    - `TPPUSER` 
+    - `TPPPASSWORD` Encrypted string provided by your IAM administrator.
+    - `TPPAccessToken` Encrypted string provided by your IAM administrator.
+    - `TPPRefreshToken` Encrypted string provided by your IAM administrator.
+    - `TrustBundle` The base64-encoded string that represents the contents of your PEM trust bundle (see next step).
+    
+    For Venafi Cloud  
+    - `CLOUDAPIKEY` Encrypted string provided by your IAM administrator.
+    - `CLOUDURL` Optional parameter. Provide it only if you have been given access to a special stack for testing.
+
+1. For Venafi Platform you would likely use either `TPPUSER`/`TPPPASSWORD`, or `TPPAccessToken`/`TPPRefreshToken`. 
+If all parameters are provided, the Access Token/Refresh Token parameters will take precedence.
 
 1. In most cases for Venafi Platform you will need to specify a trust bundle because the Venafi Platform is commonly secured
 using a certificate issued by a private enterprise PKI.  Do this by entering the base64-encoded string that represents the
@@ -163,15 +177,14 @@ contents of your PEM trust bundle in the `TrustBundle` parameter. This string ca
 1. To allow automatic retrieval of Venafi policy when a zone is requested that hasn't been loaded, set `SavePolicyFromRequest` to "true".
 
 1. Change `DEFAULTZONE` parameter to the name of the zone that will be used when none is specified in the request. 
-This will be the UUID value of the zone in Venafi Cloud deployments (e.g. "zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzz"). 
-If you use the human readable name, you will get a 404 error once the lambda function is deployed. For Venafi Platform, the 
-`DEFAULTZONE` will be a policy folder reference (e.g. "Amazon\\PCA Policy"). 
+    - For Venafi Platform, this will be a policy folder reference (e.g. "Amazon\\PCA Policy"). 
+    - For Venafi Cloud, this will be the Application Name and Issuing Template API Alias<br/>(e.g. "Business App\Enterprise CIT"). 
  
 1. Click the Deploy button to deploy the CloudFormation stack for this solution and wait until the deployment is finished.
     
 1. Add the `DEFAULTZONE` zone (and any other zones you want to pre-load) to the database so the Venafi policy will be retrieved:
     ```bash
-    aws dynamodb put-item --table-name VenafiCertPolicy --item '{"PolicyID": {"S":"zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzz"}}'
+    aws dynamodb put-item --table-name VenafiCertPolicy --item '{"PolicyID": {"S":"Business App\Enterprise CIT"}}'
     ```
 
 1. Check the logs to verify the Venafi Lambda functions are working propertly and the Venafi policy is retrieved: 
@@ -181,7 +194,7 @@ If you use the human readable name, you will get a 404 error once the lambda fun
     ```    
 1. To view the policy retrieved from Venafi for the zone:
     ```bash
-    aws dynamodb get-item --table-name VenafiCertPolicy --key '{"PolicyID": {"S":"zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzz"}}'
+    aws dynamodb get-item --table-name VenafiCertPolicy --key '{"PolicyID": {"S":"Business App\Enterprise CIT"}}'
     ```    
     
     **NOTE**: This should return a JSON response with your policy.  If this isn't returned, check to make sure
