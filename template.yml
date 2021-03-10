@@ -12,7 +12,7 @@ Metadata:
     ReadmeUrl: README.md
     Labels: ['tls','ssl','certificates','aws-certificate-manager','venafi-platform','venafi-cloud']
     HomePageUrl: https://github.com/Venafi/aws-private-ca-policy-venafi
-    SemanticVersion: 0.0.4
+    SemanticVersion: 0.0.5
     SourceCodeUrl: https://github.com/Venafi/aws-private-ca-policy-venafi
 
 Parameters:
