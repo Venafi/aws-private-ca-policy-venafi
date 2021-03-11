@@ -5,7 +5,7 @@ Description: Venafi policy enforcement for AWS Private CA.
 Metadata:
   AWS::ServerlessRepo::Application:
     Name: aws-private-ca-policy-venafi
-    Description: (UNDER DEVELOPMENT) Venafi Lambda functions for AWS that enforce enterprise security policy for the AWS Private CA.
+    Description: Venafi Lambda functions for AWS that enforce enterprise security policy for the AWS Private CA.
     Author: Venafi
     SpdxLicenseId: Apache-2.0
     LicenseUrl: LICENSE.txt
