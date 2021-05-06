@@ -1,7 +1,7 @@
 ![Venafi](Venafi_logo.png)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Community Supported](https://img.shields.io/badge/Support%20Level-Community-brightgreen)
-![Compatible with TPP 18.2+ & Cloud](https://img.shields.io/badge/Compatibility-TPP%2018.2+%20%26%20Cloud-f9a90c)  
+![Compatible with TPP 18.2+ & VaaS](https://img.shields.io/badge/Compatibility-TPP%2018.2+%20%26%20VaaS-f9a90c)  
 _**This open source project is community-supported.** To report a problem or share an idea, use
 **[Issues](../../issues)**; and if you have a suggestion for fixing the issue, please include those details, too.
 In addition, use **[Pull Requests](../../pulls)** to contribute actual bug fixes or proposed enhancements.
@@ -11,7 +11,7 @@ We welcome and appreciate all contributions. Got questions or want to discuss so
 Venafi Policy Enforcement for Amazon Private CA
 ===============================================
 
-This solution implements two [AWS Lambda](https://aws.amazon.com/lambda/) functions that allow enforcement of enterprise security policy for certificate requests directed at an [Amazon Certificate Manager Private CA](https://aws.amazon.com/certificate-manager/private-certificate-authority/).  The solution uses the [VCert-Go](https://github.com/Venafi/vcert) library to retrieve enterprise security policy from [Venafi Platform](https://www.venafi.com/platform/trust-protection-platform) or [Venafi Cloud](https://pki.venafi.com/venafi-cloud/).
+This solution implements two [AWS Lambda](https://aws.amazon.com/lambda/) functions that allow enforcement of enterprise security policy for certificate requests directed at an [Amazon Certificate Manager Private CA](https://aws.amazon.com/certificate-manager/private-certificate-authority/).  The solution uses the [VCert-Go](https://github.com/Venafi/vcert) library to retrieve enterprise security policy from [Venafi Trust Protection Platform](https://www.venafi.com/platform/trust-protection-platform) or [Venafi as a Service](https://www.venafi.com/venaficloud).
 
 ##### Diagram illustrating how it works: 
 
@@ -132,7 +132,7 @@ Change "YOUR_KMS_KEY_ARN_HERE" in `VenafiPolicyLambdaRolePolicy.json` to the ARN
     ```
     
 1. Encrypt the credentials for authenticating with the Venafi service. This will be the TPP password for Venafi Platform
-or the API key for Venafi Cloud.
+or the API key for Venafi as a Service.
     ```bash
     aws kms encrypt --key-id ${KEY_ID} --plaintext <password or API key> | jq -r .CiphertextBlob
     ```
@@ -151,7 +151,7 @@ https://us-east-1.console.aws.amazon.com/serverlessrepo/home?region=us-east-1#/a
 
 1. Enter the appropriate connection parameters for the Venafi service you are using.
     
-    For Venafi Platform:
+    **Trust Protection Platform**:
     - `TPPURL`  
     - `TPPUSER` 
     - `TPPPASSWORD` Encrypted string provided by your IAM administrator.
@@ -159,7 +159,7 @@ https://us-east-1.console.aws.amazon.com/serverlessrepo/home?region=us-east-1#/a
     - `TPPRefreshToken` Encrypted string provided by your IAM administrator.
     - `TrustBundle` The base64-encoded string that represents the contents of your PEM trust bundle (see next step).
     
-    For Venafi Cloud  
+    **Venafi as a Service**:
     - `CLOUDAPIKEY` Encrypted string provided by your IAM administrator.
     - `CLOUDURL` Optional parameter. Provide it only if you have been given access to a special stack for testing.
 
@@ -172,13 +172,13 @@ contents of your PEM trust bundle in the `TrustBundle` parameter. This string ca
     ```bash
     cat /opt/venafi/bundle.pem | base64 --wrap=10000
     ``` 
-    **NOTE**: The `TrustBundle` parameter is not needed in deployments that will be using Venafi Cloud.
+    **NOTE**: The `TrustBundle` parameter is not needed in deployments that will be using Venafi as a Service.
 
 1. To allow automatic retrieval of Venafi policy when a zone is requested that hasn't been loaded, set `SavePolicyFromRequest` to "true".
 
 1. Change `DEFAULTZONE` parameter to the name of the zone that will be used when none is specified in the request. 
     - For Venafi Platform, this will be a policy folder reference (e.g. "Amazon\\PCA Policy"). 
-    - For Venafi Cloud, this will be the Application Name and Issuing Template API Alias<br/>(e.g. "Business App\Enterprise CIT"). 
+    - For Venafi as a Service, this will be the Application name and Issuing Template API Alias<br/>(e.g. "Business App\Enterprise CIT"). 
  
 1. Click the Deploy button to deploy the CloudFormation stack for this solution and wait until the deployment is finished.
     
@@ -221,8 +221,6 @@ With it you can request a certificate from ACM Private CA (PCA) where ACM genera
 
 The output will be a certificate arn. e.g: `arn:aws:acm:us-east-1:123456789000:certificate/xxxxxxxx-yyyy-yyyy-yyyy-zzzzzzzzzzzz`.
 This certificate will also be listed in the AWS Console under Certificate Manager.
-
-
 
 Or you can request a certificate by providing your own CSR for the PCA to sign:
 ```bash
