@@ -1,4 +1,4 @@
-![Venafi](Venafi_logo.png)
+[![Venafi](.github/images/Venafi_logo.png)](https://www.venafi.com/)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Community Supported](https://img.shields.io/badge/Support%20Level-Community-brightgreen)
 ![Compatible with TPP 18.2+ & VaaS](https://img.shields.io/badge/Compatibility-TPP%2018.2+%20%26%20VaaS-f9a90c)  
@@ -15,7 +15,7 @@ This solution implements two [AWS Lambda](https://aws.amazon.com/lambda/) functi
 
 ##### Diagram illustrating how it works: 
 
-![Self-editing Diagram](Diagram.svg)
+![Self-editing Diagram](.github/images/Diagram.svg)
 
 Note: the "user" will most likely be an application rather than a person and the solution also supports the case where ACM generates the key pair and CSR and returns the certificate, private key, and chain certificates to the "user".
 
