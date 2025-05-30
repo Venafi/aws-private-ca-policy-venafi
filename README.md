@@ -2,7 +2,7 @@
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Community Supported](https://img.shields.io/badge/Support%20Level-Community-brightgreen)
 ![Compatible with TPP 18.2+ & VaaS](https://img.shields.io/badge/Compatibility-TPP%2018.2+%20%26%20VaaS-f9a90c)  
-:warning: **This community-supported open source project has reached its END-OF-LIFE, and as of May 30th 2025, this project is deprecated and will no longer be maintained**.
+:warning: _**This community-supported open source project has reached its END-OF-LIFE, and as of May 30th 2025, this project is deprecated and will no longer be maintained**._
 
 Venafi Policy Enforcement for Amazon Private CA
 ===============================================
